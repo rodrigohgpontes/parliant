@@ -1,125 +1,137 @@
-"use server"
+"use client";
 
-import { db } from "@/lib/db"
-import { responses, surveys, type NewResponse } from "@/lib/db/schema"
-import { getSession } from "@auth0/nextjs-auth0"
-import { and, eq } from "drizzle-orm"
-import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
+import { db } from "@/lib/db";
+import { redirect } from "next/navigation";
+import { useUser } from "@auth0/nextjs-auth0";
+import { revalidateSurveyPath } from "./server-actions";
 
 export async function getResponses(surveyId: number) {
-  const session = await getSession()
+  const { user } = useUser();
 
-  if (!session?.user) {
-    return []
+  if (!user) {
+    return [];
   }
 
   // First verify that the survey belongs to the user
-  const surveyResult = await db.query.surveys.findFirst({
-    where: and(eq(surveys.id, surveyId), eq(surveys.userId, session.user.sub)),
-  })
+  const surveyResult = await db`
+    SELECT * FROM surveys 
+    WHERE id = ${surveyId} AND user_id = ${user.sub}
+  `;
 
-  if (!surveyResult) {
-    return []
+  if (!surveyResult.length) {
+    return [];
   }
 
-  // Then get the responses for the survey
-  return db.query.responses.findMany({
-    where: eq(responses.surveyId, surveyId),
-    orderBy: (responses, { desc }) => [desc(responses.createdAt)],
-  })
+  const responses = await db`
+    SELECT * FROM responses 
+    WHERE survey_id = ${surveyId}
+    ORDER BY created_at DESC
+  `;
+  return responses;
 }
 
 export async function getResponse(responseId: number) {
-  const session = await getSession()
+  const { user } = useUser();
 
-  if (!session?.user) {
-    return null
+  if (!user) {
+    return null;
   }
 
-  // Join responses with surveys to verify ownership
-  const result = await db.query.responses.findFirst({
-    where: eq(responses.id, responseId),
-    with: {
-      survey: {
-        columns: {
-          userId: true,
-        },
-      },
-    },
-  })
+  const response = await db`
+    SELECT * FROM responses 
+    WHERE id = ${responseId}
+  `;
 
-  if (!result || result.survey.userId !== session.user.sub) {
-    return null
+  if (!response.length) {
+    return null;
   }
 
-  return result
+  // Verify that the survey belongs to the user
+  const survey = await db`
+    SELECT * FROM surveys 
+    WHERE id = ${response[0].survey_id} AND user_id = ${user.sub}
+  `;
+
+  if (!survey.length) {
+    return null;
+  }
+
+  return response[0];
 }
 
-export async function createResponse(surveyId: number, formData: FormData) {
-  // This action is public and doesn't require authentication
-  // It's used by respondents to submit survey responses
+export async function createResponse(surveyId: number, data: FormData) {
+  const { user } = useUser();
 
-  const name = formData.get("name") as string
-  const email = formData.get("email") as string
-
-  // In a real implementation, you would collect the actual survey responses
-  // For now, we'll just store some sample data
-  const sampleData = {
-    questions: [
-      {
-        question: "How would you rate our service?",
-        answer: "Very satisfied",
-      },
-      {
-        question: "What improvements would you suggest?",
-        answer: "Better mobile experience",
-      },
-    ],
+  if (!user) {
+    throw new Error("Not authenticated");
   }
 
-  const newResponse: NewResponse = {
-    surveyId,
-    respondentName: name,
-    respondentEmail: email,
-    data: sampleData,
-    createdAt: new Date(),
-    completedAt: new Date(),
+  // Verify that the survey belongs to the user
+  const survey = await db`
+    SELECT * FROM surveys 
+    WHERE id = ${surveyId} AND user_id = ${user.sub}
+  `;
+
+  if (!survey.length) {
+    throw new Error("Survey not found");
   }
 
-  await db.insert(responses).values(newResponse)
+  const content = data.get("content") as string;
 
-  // Redirect to a thank you page
-  redirect(`/surveys/${surveyId}/thank-you`)
+  if (!content) {
+    throw new Error("Content is required");
+  }
+
+  await db`
+    INSERT INTO responses (
+      survey_id, 
+      data, 
+      respondent_id, 
+      respondent_name, 
+      respondent_email, 
+      completed_at
+    )
+    VALUES (
+      ${surveyId},
+      ${JSON.stringify({ content })},
+      ${user.sub},
+      ${user.name || user.email},
+      ${user.email},
+      ${new Date()}
+    )
+  `;
+  await revalidateSurveyPath(surveyId);
 }
 
 export async function deleteResponse(responseId: number) {
-  const session = await getSession()
+  const { user } = useUser();
 
-  if (!session?.user) {
-    throw new Error("Not authenticated")
+  if (!user) {
+    throw new Error("Not authenticated");
   }
 
-  // First verify that the response belongs to a survey owned by the user
-  const responseResult = await db.query.responses.findFirst({
-    where: eq(responses.id, responseId),
-    with: {
-      survey: {
-        columns: {
-          userId: true,
-          id: true,
-        },
-      },
-    },
-  })
+  const response = await db`
+    SELECT * FROM responses 
+    WHERE id = ${responseId}
+  `;
 
-  if (!responseResult || responseResult.survey.userId !== session.user.sub) {
-    throw new Error("Unauthorized")
+  if (!response.length) {
+    throw new Error("Response not found");
   }
 
-  const surveyId = responseResult.survey.id
+  // Verify that the survey belongs to the user
+  const survey = await db`
+    SELECT * FROM surveys 
+    WHERE id = ${response[0].survey_id} AND user_id = ${user.sub}
+  `;
 
-  await db.delete(responses).where(eq(responses.id, responseId))
+  if (!survey.length) {
+    throw new Error("Survey not found");
+  }
 
-  revalidatePath(`/dashboard/surveys/${surveyId}/responses`)
+  await db`
+    DELETE FROM responses 
+    WHERE id = ${responseId}
+  `;
+  await revalidateSurveyPath(response[0].survey_id);
 }

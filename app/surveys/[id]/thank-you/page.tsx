@@ -1,28 +1,27 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { db } from "@/lib/db"
-import { surveys } from "@/lib/db/schema"
-import { eq } from "drizzle-orm"
-import { CheckCircle } from "lucide-react"
-import Link from "next/link"
-import { notFound } from "next/navigation"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { db } from "@/lib/db";
+import { CheckCircle } from "lucide-react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
 export default async function ThankYouPage({
   params,
 }: {
-  params: { id: string }
+  params: { id: string; };
 }) {
-  const surveyId = Number.parseInt(params.id)
+  const surveyId = Number.parseInt(params.id);
 
   // Get the survey without checking user ownership
-  const surveyResults = await db.query.surveys.findMany({
-    where: eq(surveys.id, surveyId),
-  })
+  const surveyResults = await db`
+    SELECT * FROM surveys 
+    WHERE id = ${surveyId}
+  `;
 
-  const survey = surveyResults[0]
+  const survey = surveyResults[0];
 
   if (!survey) {
-    notFound()
+    notFound();
   }
 
   return (
@@ -47,5 +46,5 @@ export default async function ThankYouPage({
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

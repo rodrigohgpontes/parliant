@@ -1,16 +1,23 @@
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import type { Survey } from "@/lib/db/schema"
-import { Button } from "@/components/ui/button"
-import { BarChart, Edit, Share2, Trash2 } from "lucide-react"
-import Link from "next/link"
-import { deleteSurvey } from "@/lib/actions/survey-actions"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { BarChart, Edit, Share2, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { deleteSurvey } from "@/lib/actions/survey-actions";
+
+interface Survey {
+  id: number;
+  title: string;
+  description?: string;
+  createdAt: Date;
+  is_active?: boolean;
+}
 
 interface SurveyCardProps {
-  survey: Survey
+  survey: Survey;
 }
 
 export function SurveyCard({ survey }: SurveyCardProps) {
-  const formattedDate = new Date(survey.createdAt).toLocaleDateString()
+  const formattedDate = new Date(survey.createdAt).toLocaleDateString();
 
   return (
     <Card>
@@ -46,7 +53,7 @@ export function SurveyCard({ survey }: SurveyCardProps) {
           </Link>
           <form
             action={async () => {
-              await deleteSurvey(survey.id)
+              await deleteSurvey(survey.id);
             }}
           >
             <Button variant="outline" size="icon" type="submit" className="text-destructive hover:bg-destructive/10">
@@ -56,5 +63,5 @@ export function SurveyCard({ survey }: SurveyCardProps) {
         </div>
       </CardFooter>
     </Card>
-  )
+  );
 }

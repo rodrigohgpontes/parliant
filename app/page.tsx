@@ -1,14 +1,10 @@
-import { Button } from "@/components/ui/button"
-import { ChevronRight, BarChart3, Clock, MessageSquare } from "lucide-react"
-import Link from "next/link"
-import { getSession } from "@auth0/nextjs-auth0"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { MobileMenu } from "@/components/mobile-menu"
+import { Button } from "@/components/ui/button";
+import { ChevronRight, BarChart3, Clock, MessageSquare } from "lucide-react";
+import Link from "next/link";
+import { Navigation } from "@/components/nav";
+import { MobileMenu } from "@/components/mobile-menu";
 
-export default async function Home() {
-  const session = await getSession()
-  const isLoggedIn = !!session
-
+export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
@@ -27,35 +23,8 @@ export default async function Home() {
               Pricing
             </a>
           </nav>
-          <div className="hidden md:flex items-center gap-4">
-            <ThemeToggle />
-            {session ? (
-              <>
-                <Link href="/dashboard">
-                  <Button variant="outline" size="sm">
-                    Dashboard
-                  </Button>
-                </Link>
-                <Link href="/api/auth/logout">
-                  <Button variant="ghost" size="sm">
-                    Log out
-                  </Button>
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link href="/login">
-                  <Button variant="outline" size="sm">
-                    Log in
-                  </Button>
-                </Link>
-                <Link href="/signup">
-                  <Button size="sm">Get started—it's free</Button>
-                </Link>
-              </>
-            )}
-          </div>
-          <MobileMenu isLoggedIn={isLoggedIn} />
+          <Navigation />
+          <MobileMenu />
         </div>
       </header>
 
@@ -319,5 +288,5 @@ export default async function Home() {
         </div>
       </footer>
     </div>
-  )
+  );
 }

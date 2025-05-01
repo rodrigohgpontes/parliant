@@ -1,10 +1,12 @@
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { getSession } from "@auth0/nextjs-auth0"
-import { ThemeToggle } from "@/components/theme-toggle"
+"use client";
 
-export async function DashboardHeader() {
-  const session = await getSession()
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useUser } from "@auth0/nextjs-auth0";
+import { ThemeToggle } from "@/components/theme-toggle";
+
+export function DashboardHeader() {
+  const { user } = useUser();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
@@ -16,8 +18,8 @@ export async function DashboardHeader() {
         </div>
         <div className="flex items-center gap-4">
           <ThemeToggle />
-          <div className="text-sm">{session?.user?.name || session?.user?.email}</div>
-          <Link href="/api/auth/logout">
+          <div className="text-sm">{user?.name || user?.email}</div>
+          <Link href="/auth/logout">
             <Button variant="outline" size="sm">
               Log out
             </Button>
@@ -25,5 +27,5 @@ export async function DashboardHeader() {
         </div>
       </div>
     </header>
-  )
+  );
 }

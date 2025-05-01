@@ -1,23 +1,28 @@
-import type React from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
-import { getSession } from "@auth0/nextjs-auth0"
-import { redirect } from "next/navigation"
+"use client";
 
-export default async function DashboardLayout({
+import { DashboardHeader } from "@/components/dashboard-header";
+import { useUser } from "@auth0/nextjs-auth0";
+import { redirect } from "next/navigation";
+
+export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const session = await getSession()
+  const { user, isLoading } = useUser();
 
-  if (!session) {
-    redirect("/login")
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!user) {
+    redirect("/login");
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col">
       <DashboardHeader />
-      <main className="flex-1 container py-8">{children}</main>
+      <main className="flex-1">{children}</main>
     </div>
-  )
+  );
 }

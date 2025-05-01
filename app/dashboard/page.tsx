@@ -1,11 +1,11 @@
-import { Button } from "@/components/ui/button"
-import { SurveyCard } from "@/components/survey-card"
-import { getSurveys } from "@/lib/actions/survey-actions"
-import Link from "next/link"
-import { Plus } from "lucide-react"
+import { Button } from "@/components/ui/button";
+import { SurveyCard } from "@/components/survey-card";
+import { getSurveysServer } from "@/lib/actions/server-data-actions";
+import Link from "next/link";
+import { Plus } from "lucide-react";
 
 export default async function DashboardPage() {
-  const surveys = await getSurveys()
+  const surveys = await getSurveysServer();
 
   return (
     <div>
@@ -38,5 +38,5 @@ export default async function DashboardPage() {
         </div>
       )}
     </div>
-  )
+  );
 }

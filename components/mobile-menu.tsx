@@ -1,18 +1,16 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { Menu } from "lucide-react"
-import Link from "next/link"
-import { useState } from "react"
-import { ThemeToggle } from "./theme-toggle"
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
+import { ThemeToggle } from "./theme-toggle";
+import { useUser } from "@auth0/nextjs-auth0";
 
-interface MobileMenuProps {
-  isLoggedIn: boolean
-}
-
-export function MobileMenu({ isLoggedIn }: MobileMenuProps) {
-  const [open, setOpen] = useState(false)
+export function MobileMenu() {
+  const [open, setOpen] = useState(false);
+  const { user, isLoading } = useUser();
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -45,14 +43,14 @@ export function MobileMenu({ isLoggedIn }: MobileMenuProps) {
           <div className="flex items-center justify-between pt-4">
             <ThemeToggle />
             <div className="flex gap-2">
-              {isLoggedIn ? (
+              {isLoading ? null : user ? (
                 <>
                   <Link href="/dashboard" onClick={() => setOpen(false)}>
                     <Button variant="outline" size="sm">
                       Dashboard
                     </Button>
                   </Link>
-                  <Link href="/api/auth/logout" onClick={() => setOpen(false)}>
+                  <Link href="/auth/logout" onClick={() => setOpen(false)}>
                     <Button variant="ghost" size="sm">
                       Log out
                     </Button>
@@ -75,5 +73,5 @@ export function MobileMenu({ isLoggedIn }: MobileMenuProps) {
         </div>
       </SheetContent>
     </Sheet>
-  )
+  );
 }

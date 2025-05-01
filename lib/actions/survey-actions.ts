@@ -1,104 +1,95 @@
-"use server"
+"use client";
 
-import { db } from "@/lib/db"
-import { surveys, type NewSurvey } from "@/lib/db/schema"
-import { getSession } from "@auth0/nextjs-auth0"
-import { eq } from "drizzle-orm"
-import { revalidatePath } from "next/cache"
-import { redirect } from "next/navigation"
+import { db } from "@/lib/db";
+import { redirect } from "next/navigation";
+import { useUser } from "@auth0/nextjs-auth0";
+import { revalidateDashboard, revalidateSurveyAndDashboard } from "./server-actions";
 
 export async function getSurveys() {
-  const session = await getSession()
+  const { user } = useUser();
 
-  if (!session?.user) {
-    return []
+  if (!user) {
+    throw new Error("Not authenticated");
   }
 
-  return db.query.surveys.findMany({
-    where: eq(surveys.userId, session.user.sub),
-    orderBy: (surveys, { desc }) => [desc(surveys.createdAt)],
-  })
+  const result = await db`
+    SELECT * FROM surveys 
+    WHERE user_id = ${user.sub}
+    ORDER BY created_at DESC
+  `;
+  return result;
 }
 
 export async function getSurvey(id: number) {
-  const session = await getSession()
+  const { user } = useUser();
 
-  if (!session?.user) {
-    return null
+  if (!user) {
+    return null;
   }
 
-  const results = await db.query.surveys.findMany({
-    where: (surveys, { and, eq }) => and(eq(surveys.id, id), eq(surveys.userId, session.user.sub)),
-  })
+  const results = await db`
+    SELECT * FROM surveys 
+    WHERE id = ${id} AND user_id = ${user.sub}
+  `;
 
-  return results[0] || null
+  return results[0] || null;
 }
 
-export async function createSurvey(formData: FormData) {
-  const session = await getSession()
+export async function createSurvey(data: FormData) {
+  const { user } = useUser();
 
-  if (!session?.user) {
-    throw new Error("Not authenticated")
+  if (!user) {
+    throw new Error("Not authenticated");
   }
 
-  const title = formData.get("title") as string
-  const description = formData.get("description") as string
+  const title = data.get("title") as string;
+  const description = data.get("description") as string;
 
   if (!title) {
-    throw new Error("Title is required")
+    throw new Error("Title is required");
   }
 
-  const newSurvey: NewSurvey = {
-    userId: session.user.sub,
-    title,
-    description,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    isActive: true,
-  }
-
-  await db.insert(surveys).values(newSurvey)
-
-  revalidatePath("/dashboard")
-  redirect("/dashboard")
+  await db`
+    INSERT INTO surveys (user_id, title, description)
+    VALUES (${user.sub}, ${title}, ${description})
+  `;
+  await revalidateDashboard();
+  redirect("/dashboard");
 }
 
-export async function updateSurvey(id: number, formData: FormData) {
-  const session = await getSession()
+export async function updateSurvey(id: number, data: FormData) {
+  const { user } = useUser();
 
-  if (!session?.user) {
-    throw new Error("Not authenticated")
+  if (!user) {
+    throw new Error("Not authenticated");
   }
 
-  const title = formData.get("title") as string
-  const description = formData.get("description") as string
+  const title = data.get("title") as string;
+  const description = data.get("description") as string;
 
   if (!title) {
-    throw new Error("Title is required")
+    throw new Error("Title is required");
   }
 
-  await db
-    .update(surveys)
-    .set({
-      title,
-      description,
-      updatedAt: new Date(),
-    })
-    .where(eq(surveys.id, id))
-
-  revalidatePath("/dashboard")
-  revalidatePath(`/dashboard/surveys/${id}`)
-  redirect("/dashboard")
+  await db`
+    UPDATE surveys 
+    SET title = ${title}, description = ${description}
+    WHERE id = ${id} AND user_id = ${user.sub}
+  `;
+  await revalidateSurveyAndDashboard(id);
+  redirect("/dashboard");
 }
 
 export async function deleteSurvey(id: number) {
-  const session = await getSession()
+  const { user } = useUser();
 
-  if (!session?.user) {
-    throw new Error("Not authenticated")
+  if (!user) {
+    throw new Error("Not authenticated");
   }
 
-  await db.delete(surveys).where(eq(surveys.id, id))
-
-  revalidatePath("/dashboard")
+  await db`
+    DELETE FROM surveys 
+    WHERE id = ${id} AND user_id = ${user.sub}
+  `;
+  await revalidateDashboard();
 }

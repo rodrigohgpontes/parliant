@@ -1,29 +1,36 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import type { Survey } from "@/lib/db/schema"
-import { useState } from "react"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useState } from "react";
+
+interface Survey {
+  id?: number;
+  title: string;
+  description?: string;
+  createdAt?: Date;
+  is_active?: boolean;
+}
 
 interface SurveyFormProps {
-  survey?: Survey
-  onSubmit: (formData: FormData) => Promise<void>
-  onCancel: () => void
+  survey?: Survey;
+  onSubmit: (formData: FormData) => Promise<void>;
+  onCancel: () => void;
 }
 
 export function SurveyForm({ survey, onSubmit, onCancel }: SurveyFormProps) {
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleSubmit(formData: FormData) {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      await onSubmit(formData)
+      await onSubmit(formData);
     } catch (error) {
-      console.error("Error submitting form:", error)
-      setIsSubmitting(false)
+      console.error("Error submitting form:", error);
+      setIsSubmitting(false);
     }
   }
 
@@ -65,5 +72,5 @@ export function SurveyForm({ survey, onSubmit, onCancel }: SurveyFormProps) {
         </CardFooter>
       </form>
     </Card>
-  )
+  );
 }

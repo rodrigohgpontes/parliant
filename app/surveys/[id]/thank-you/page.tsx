@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { db } from "@/lib/db";
+import { db } from "@/lib/db/index";
 import { CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";

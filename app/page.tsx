@@ -1,33 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { ChevronRight, BarChart3, Clock, MessageSquare } from "lucide-react";
 import Link from "next/link";
-import { Navigation } from "@/components/nav";
-import { MobileMenu } from "@/components/mobile-menu";
+import { Header } from "@/components/header";
+import Image from "next/image";
 
 export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold">Parliant.AI</span>
-          </div>
-          <nav className="hidden md:flex items-center gap-6">
-            <a href="#what-is-it" className="text-sm font-medium hover:text-primary">
-              What is it
-            </a>
-            <a href="#benefits" className="text-sm font-medium hover:text-primary">
-              Benefits
-            </a>
-            <a href="#pricing" className="text-sm font-medium hover:text-primary">
-              Pricing
-            </a>
-          </nav>
-          <Navigation />
-          <MobileMenu />
-        </div>
-      </header>
-
       <main className="flex-1">
         {/* Hero Section */}
         <section className="py-20 md:py-32 bg-gradient-to-b from-background to-muted/50">
@@ -274,16 +253,31 @@ export default function Home() {
         </section>
       </main>
 
+      <div className="flex justify-center my-12">
+        <Image src="/logo-large.png" alt="Parliant.AI logo large" width={200} height={200} />
+      </div>
+
       <footer className="border-t bg-background">
         <div className="container px-4 md:px-6 py-8">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div>
               <div className="text-lg font-bold">Parliant.AI</div>
               <p className="mt-1 text-sm text-muted-foreground">Open-ended surveys conducted by AI</p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              © {new Date().getFullYear()} Parliant.AI. All rights reserved.
-            </p>
+            <div className="flex items-center gap-4">
+              <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary">
+                Terms of Service
+              </Link>
+              <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary">
+                Privacy Policy
+              </Link>
+              <Link href="/contact" className="text-sm text-muted-foreground hover:text-primary">
+                Contact
+              </Link>
+              <p className="text-xs text-muted-foreground">
+                © {new Date().getFullYear()} Parliant.AI. All rights reserved.
+              </p>
+            </div>
           </div>
         </div>
       </footer>

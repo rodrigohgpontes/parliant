@@ -1,18 +1,26 @@
 "use server";
 
-import { db } from "@/lib/db";
-import { auth0 } from "@/lib/auth0";
+import { db } from "@/lib/db/index";
+import { getSession } from "@/lib/auth0";
 
 interface Survey {
-    id: number;
+    id: string;
     title: string;
     description?: string;
-    createdAt: Date;
+    created_at: Date;
+    updated_at: Date;
+    user_id: string;
     is_active?: boolean;
 }
 
+interface User {
+    id: string;
+    auth0_id: string;
+    email: string;
+}
+
 export async function getSurveysServer(): Promise<Survey[]> {
-    const session = await auth0.getSession();
+    const session = await getSession();
     const user = session?.user;
 
     if (!user) {
@@ -23,9 +31,9 @@ export async function getSurveysServer(): Promise<Survey[]> {
     const userResult = await db`
         SELECT id, auth0_id, email FROM users 
         WHERE auth0_id = ${user.sub}
-    `;
+    ` as QueryResult<User>;
 
-    if (!userResult.length) {
+    if (!userResult?.length) {
         throw new Error(`User not found in database for auth0_id: ${user.sub}`);
     }
 
@@ -35,19 +43,25 @@ export async function getSurveysServer(): Promise<Survey[]> {
         SELECT * FROM surveys 
         WHERE user_id = ${userId}
         ORDER BY created_at DESC
-    `;
+    ` as QueryResult<Survey>;
+
+    if (!result) {
+        return [];
+    }
 
     return result.map(survey => ({
         id: survey.id,
         title: survey.title,
         description: survey.description,
-        createdAt: new Date(survey.created_at),
+        created_at: new Date(survey.created_at),
+        updated_at: new Date(survey.updated_at),
+        user_id: survey.user_id,
         is_active: survey.is_active
     }));
 }
 
-export async function getSurveyServer(id: number): Promise<Survey | null> {
-    const session = await auth0.getSession();
+export async function getSurveyServer(id: string): Promise<Survey | null> {
+    const session = await getSession();
     const user = session?.user;
 
     if (!user) {
@@ -57,9 +71,9 @@ export async function getSurveyServer(id: number): Promise<Survey | null> {
     const results = await db`
     SELECT * FROM surveys 
     WHERE id = ${id} AND user_id = ${user.sub}
-  `;
+  ` as QueryResult<Survey>;
 
-    if (!results.length) {
+    if (!results?.length) {
         return null;
     }
 
@@ -68,13 +82,15 @@ export async function getSurveyServer(id: number): Promise<Survey | null> {
         id: survey.id,
         title: survey.title,
         description: survey.description,
-        createdAt: new Date(survey.created_at),
+        created_at: new Date(survey.created_at),
+        updated_at: new Date(survey.updated_at),
+        user_id: survey.user_id,
         is_active: survey.is_active
     };
 }
 
 export async function getResponsesServer(surveyId: number) {
-    const session = await auth0.getSession();
+    const session = await getSession();
     const user = session?.user;
 
     if (!user) {
@@ -100,7 +116,7 @@ export async function getResponsesServer(surveyId: number) {
 }
 
 export async function getResponseServer(responseId: number) {
-    const session = await auth0.getSession();
+    const session = await getSession();
     const user = session?.user;
 
     if (!user) {

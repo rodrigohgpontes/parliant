@@ -8,7 +8,7 @@ export default function LogoutPage() {
 
     useEffect(() => {
         // Redirect to Auth0 logout endpoint
-        window.location.href = "/api/auth/logout";
+        window.location.href = "/auth/logout";
     }, [router]);
 
     return (

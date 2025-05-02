@@ -1,5 +1,5 @@
 import type { NextRequest } from "next/server";
-import { auth0 } from "@/lib/auth0";
+import { auth0 } from "@/lib/auth0-client";
 import { NextResponse } from "next/server";
 import { createOrUpdateUser } from "@/lib/actions/user-actions";
 

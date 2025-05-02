@@ -1,11 +1,12 @@
-import { Auth0Client } from "@auth0/nextjs-auth0/server";
+"use server";
 
-export const auth0 = new Auth0Client({
-    clientId: process.env.AUTH0_CLIENT_ID,
-    clientSecret: process.env.AUTH0_CLIENT_SECRET,
-    domain: process.env.AUTH0_ISSUER_BASE_URL?.replace('https://', ''),
-    secret: process.env.AUTH0_SECRET,
-    authorizationParameters: {
-        scope: 'openid profile email',
-    },
-}); 
+import { auth0 } from "./auth0-client";
+
+export async function getSession() {
+    return await auth0.getSession();
+}
+
+export async function getUser() {
+    const session = await auth0.getSession();
+    return session?.user;
+} 

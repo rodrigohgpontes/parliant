@@ -5,10 +5,12 @@ import Link from "next/link";
 import { deleteSurvey } from "@/lib/actions/survey-actions";
 
 interface Survey {
-  id: number;
+  id: string;
   title: string;
   description?: string;
-  createdAt: Date;
+  created_at: Date;
+  updated_at: Date;
+  user_id: string;
   is_active?: boolean;
 }
 
@@ -17,7 +19,7 @@ interface SurveyCardProps {
 }
 
 export function SurveyCard({ survey }: SurveyCardProps) {
-  const formattedDate = new Date(survey.createdAt).toLocaleDateString();
+  const formattedDate = new Date(survey.created_at).toLocaleDateString();
 
   return (
     <Card>

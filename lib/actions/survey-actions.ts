@@ -1,95 +1,76 @@
 "use client";
 
-import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
-import { useUser } from "@auth0/nextjs-auth0";
-import { revalidateDashboard, revalidateSurveyAndDashboard } from "./server-actions";
 
-export async function getSurveys() {
-  const { user } = useUser();
-
-  if (!user) {
-    throw new Error("Not authenticated");
-  }
-
-  const result = await db`
-    SELECT * FROM surveys 
-    WHERE user_id = ${user.sub}
-    ORDER BY created_at DESC
-  `;
-  return result;
+interface Survey {
+  id: string;
+  title: string;
+  description?: string;
+  created_at: Date;
+  updated_at: Date;
+  user_id: string;
+  is_active: boolean;
 }
 
-export async function getSurvey(id: number) {
-  const { user } = useUser();
+async function revalidateDashboard() {
+  // Implementation for revalidating dashboard data
+}
 
-  if (!user) {
-    return null;
+async function revalidateSurveyAndDashboard(id: string) {
+  // Implementation for revalidating survey and dashboard data
+}
+
+export async function getSurveys() {
+  const response = await fetch('/api/surveys');
+  if (!response.ok) {
+    throw new Error('Failed to fetch surveys');
   }
+  return response.json();
+}
 
-  const results = await db`
-    SELECT * FROM surveys 
-    WHERE id = ${id} AND user_id = ${user.sub}
-  `;
-
-  return results[0] || null;
+export async function getSurvey(id: string) {
+  const response = await fetch(`/api/surveys/${id}`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch survey');
+  }
+  return response.json();
 }
 
 export async function createSurvey(data: FormData) {
-  const { user } = useUser();
+  console.log(' >>> createSurvey ', data);
+  const response = await fetch('/api/surveys', {
+    method: 'POST',
+    body: data
+  });
 
-  if (!user) {
-    throw new Error("Not authenticated");
+  if (!response.ok) {
+    throw new Error('Failed to create survey');
   }
 
-  const title = data.get("title") as string;
-  const description = data.get("description") as string;
+  console.log(' >>> createSurvey response ', response);
 
-  if (!title) {
-    throw new Error("Title is required");
-  }
-
-  await db`
-    INSERT INTO surveys (user_id, title, description)
-    VALUES (${user.sub}, ${title}, ${description})
-  `;
-  await revalidateDashboard();
   redirect("/dashboard");
 }
 
-export async function updateSurvey(id: number, data: FormData) {
-  const { user } = useUser();
+export async function updateSurvey(id: string, data: FormData) {
+  const response = await fetch(`/api/surveys/${id}`, {
+    method: 'PUT',
+    body: data
+  });
 
-  if (!user) {
-    throw new Error("Not authenticated");
+  if (!response.ok) {
+    throw new Error('Failed to update survey');
   }
 
-  const title = data.get("title") as string;
-  const description = data.get("description") as string;
-
-  if (!title) {
-    throw new Error("Title is required");
-  }
-
-  await db`
-    UPDATE surveys 
-    SET title = ${title}, description = ${description}
-    WHERE id = ${id} AND user_id = ${user.sub}
-  `;
-  await revalidateSurveyAndDashboard(id);
   redirect("/dashboard");
 }
 
-export async function deleteSurvey(id: number) {
-  const { user } = useUser();
+export async function deleteSurvey(id: string) {
+  const response = await fetch(`/api/surveys/${id}`, {
+    method: 'DELETE'
+  });
 
-  if (!user) {
-    throw new Error("Not authenticated");
+  if (!response.ok) {
+    throw new Error('Failed to delete survey');
   }
-
-  await db`
-    DELETE FROM surveys 
-    WHERE id = ${id} AND user_id = ${user.sub}
-  `;
-  await revalidateDashboard();
 }

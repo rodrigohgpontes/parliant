@@ -2,6 +2,7 @@
 
 import { useUser } from "@auth0/nextjs-auth0";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export default function SignupPage() {
   const { user, isLoading } = useUser();
@@ -31,6 +32,16 @@ export default function SignupPage() {
             Sign up with Auth0
           </a>
         </div>
+        <p className="text-center text-sm text-muted-foreground">
+          By signing up, you agree to our{" "}
+          <Link href="/terms" className="text-primary hover:underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="text-primary hover:underline">
+            Privacy Policy
+          </Link>
+        </p>
       </div>
     </div>
   );

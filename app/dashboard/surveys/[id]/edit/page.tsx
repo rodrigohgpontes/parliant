@@ -1,22 +1,21 @@
-"use client"
+"use client";
 
-import { SurveyForm } from "@/components/survey-form"
-import { getSurvey } from "@/lib/actions/survey-actions"
-import { handleUpdate } from "./actions"
-import { useRouter } from "next/navigation"
-import { notFound } from "next/navigation"
+import { SurveyForm } from "@/components/survey-form";
+import { getSurvey } from "@/lib/actions/survey-actions";
+import { handleUpdate } from "./actions";
+import { useRouter } from "next/navigation";
+import { notFound } from "next/navigation";
 
 export default async function EditSurveyPage({
   params,
 }: {
-  params: { id: string }
+  params: { id: string; };
 }) {
-  const id = Number.parseInt(params.id)
-  const survey = await getSurvey(id)
-  const router = useRouter()
+  const survey = await getSurvey(params.id);
+  const router = useRouter();
 
   if (!survey) {
-    notFound()
+    notFound();
   }
 
   return (
@@ -25,12 +24,12 @@ export default async function EditSurveyPage({
       <SurveyForm
         survey={survey}
         onSubmit={async (formData) => {
-          await handleUpdate(id, formData)
+          await handleUpdate(params.id, formData);
         }}
         onCancel={() => {
-          router.push("/dashboard")
+          router.push("/dashboard");
         }}
       />
     </div>
-  )
+  );
 }

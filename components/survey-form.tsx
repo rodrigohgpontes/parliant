@@ -8,10 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 
 interface Survey {
-  id?: number;
+  id?: string;
   title: string;
   description?: string;
-  createdAt?: Date;
+  created_at?: Date;
+  updated_at?: Date;
+  user_id?: string;
   is_active?: boolean;
 }
 

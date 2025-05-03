@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ChevronRight, BarChart3, Clock, MessageSquare } from "lucide-react";
 import Link from "next/link";
-import { Header } from "@/components/header";
 import Image from "next/image";
 
 export default function Home() {

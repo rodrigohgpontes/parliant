@@ -1,17 +1,18 @@
 "use client";
 
 import { SurveyForm } from "@/components/survey-form";
-import { getSurvey } from "@/lib/actions/survey-actions";
-import { handleUpdate } from "./actions";
+import { getSurveyServerAction } from "@/lib/actions/survey-server-actions";
+import { updateSurveyServerAction } from "@/lib/actions/survey-server-actions";
 import { useRouter } from "next/navigation";
 import { notFound } from "next/navigation";
 
 export default async function EditSurveyPage({
   params,
 }: {
-  params: { id: string; };
+  params: Promise<{ id: string; }>;
 }) {
-  const survey = await getSurvey(params.id);
+  const { id } = await params;
+  const survey = await getSurveyServerAction(id);
   const router = useRouter();
 
   if (!survey) {
@@ -24,7 +25,7 @@ export default async function EditSurveyPage({
       <SurveyForm
         survey={survey}
         onSubmit={async (formData) => {
-          await handleUpdate(params.id, formData);
+          await updateSurveyServerAction(id, formData);
         }}
         onCancel={() => {
           router.push("/dashboard");

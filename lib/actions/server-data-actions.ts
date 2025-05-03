@@ -1,7 +1,9 @@
 "use server";
 
-import { db } from "@/lib/db/index";
+import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth0";
+import { Survey, User, Response } from "@/lib/types";
+import { QueryResult } from "neon/serverless";
 
 interface Survey {
     id: string;
@@ -68,9 +70,21 @@ export async function getSurveyServer(id: string): Promise<Survey | null> {
         return null;
     }
 
+    // First get the user's UUID from the users table
+    const userResult = await db`
+        SELECT id FROM users 
+        WHERE auth0_id = ${user.sub}
+    ` as QueryResult<User>;
+
+    if (!userResult?.length) {
+        throw new Error(`User not found in database for auth0_id: ${user.sub}`);
+    }
+
+    const userId = userResult[0].id;
+
     const results = await db`
     SELECT * FROM surveys 
-    WHERE id = ${id} AND user_id = ${user.sub}
+    WHERE id = ${id} AND user_id = ${userId}
   ` as QueryResult<Survey>;
 
     if (!results?.length) {
@@ -89,7 +103,7 @@ export async function getSurveyServer(id: string): Promise<Survey | null> {
     };
 }
 
-export async function getResponsesServer(surveyId: number) {
+export async function getResponsesServer(surveyId: string): Promise<Response[]> {
     const session = await getSession();
     const user = session?.user;
 
@@ -97,10 +111,22 @@ export async function getResponsesServer(surveyId: number) {
         return [];
     }
 
+    // First get the user's UUID from the users table
+    const userResult = await db`
+        SELECT id FROM users 
+        WHERE auth0_id = ${user.sub}
+    ` as QueryResult<User>;
+
+    if (!userResult?.length) {
+        throw new Error(`User not found in database for auth0_id: ${user.sub}`);
+    }
+
+    const userId = userResult[0].id;
+
     // First verify that the survey belongs to the user
     const surveyResult = await db`
     SELECT * FROM surveys 
-    WHERE id = ${surveyId} AND user_id = ${user.sub}
+    WHERE id = ${surveyId} AND user_id = ${userId}
   `;
 
     if (!surveyResult.length) {
@@ -111,8 +137,9 @@ export async function getResponsesServer(surveyId: number) {
     SELECT * FROM responses 
     WHERE survey_id = ${surveyId}
     ORDER BY created_at DESC
-  `;
-    return responses;
+  ` as QueryResult<Response>;
+
+    return responses || [];
 }
 
 export async function getResponseServer(responseId: number) {

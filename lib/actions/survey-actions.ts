@@ -37,7 +37,6 @@ export async function getSurvey(id: string) {
 }
 
 export async function createSurvey(data: FormData) {
-  console.log(' >>> createSurvey ', data);
   const response = await fetch('/api/surveys', {
     method: 'POST',
     body: data
@@ -46,8 +45,6 @@ export async function createSurvey(data: FormData) {
   if (!response.ok) {
     throw new Error('Failed to create survey');
   }
-
-  console.log(' >>> createSurvey response ', response);
 
   redirect("/dashboard");
 }

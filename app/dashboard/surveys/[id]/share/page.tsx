@@ -1,24 +1,24 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { getSurvey } from "@/lib/actions/survey-actions"
-import { ArrowLeft, Copy, Mail } from "lucide-react"
-import Link from "next/link"
-import { notFound } from "next/navigation"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { getSurvey } from "@/lib/actions/survey-actions";
+import { ArrowLeft, Copy, Mail } from "lucide-react";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 
 export default async function ShareSurveyPage({
   params,
 }: {
-  params: { id: string }
+  params: { id: string; };
 }) {
-  const surveyId = Number.parseInt(params.id)
-  const survey = await getSurvey(surveyId)
+  const surveyId = params.id;
+  const survey = await getSurvey(surveyId);
 
   if (!survey) {
-    notFound()
+    notFound();
   }
 
-  const surveyUrl = `${process.env.AUTH0_BASE_URL}/surveys/${surveyId}`
+  const surveyUrl = `${process.env.AUTH0_BASE_URL}/surveys/${surveyId}`;
 
   return (
     <div>
@@ -68,11 +68,11 @@ export default async function ShareSurveyPage({
           </div>
         </CardContent>
         <CardFooter>
-          <Link href={`/dashboard/surveys/${surveyId}/responses`}>
-            <Button variant="outline">View Responses</Button>
+          <Link href={`/dashboard/surveys/${surveyId}`}>
+            <Button variant="outline">View Survey</Button>
           </Link>
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }

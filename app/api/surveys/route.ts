@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAuthenticatedSurveys, createAuthenticatedSurvey } from '@/lib/actions/server-actions';
 
 export async function GET() {
+    console.log(' >>> GET request ');
     try {
         const surveys = await getAuthenticatedSurveys();
         return NextResponse.json(surveys);
@@ -12,7 +13,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
+        console.log(' >>> POST request ', request);
         const formData = await request.formData();
+        console.log(' >>> formData ', formData);
         await createAuthenticatedSurvey(formData);
         return NextResponse.json({ success: true });
     } catch (error) {

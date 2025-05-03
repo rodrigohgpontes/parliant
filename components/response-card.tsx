@@ -5,11 +5,12 @@ import { deleteResponse } from "@/lib/actions/response-actions";
 
 interface Response {
   id: number;
-  surveyId: number;
-  respondentName: string;
-  respondentEmail: string;
-  answers: Record<string, string>;
-  createdAt: Date;
+  survey_id: number;
+  data: any;
+  respondent_id: string;
+  respondent_name: string;
+  respondent_email: string;
+  completed_at: Date;
 }
 
 interface ResponseCardProps {
@@ -17,27 +18,24 @@ interface ResponseCardProps {
 }
 
 export function ResponseCard({ response }: ResponseCardProps) {
-  const formattedDate = new Date(response.createdAt).toLocaleDateString();
-  const questions = Object.entries(response.answers).map(([question, answer]) => ({
-    question,
-    answer
-  }));
+  const formattedDate = new Date(response.completed_at).toLocaleDateString();
+  const answers = response.data || {};
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{response.respondentName || "Anonymous"}</CardTitle>
+        <CardTitle>{response.respondent_name || "Anonymous"}</CardTitle>
         <CardDescription>
-          {response.respondentEmail && `${response.respondentEmail} • `}
+          {response.respondent_email && `${response.respondent_email} • `}
           Submitted on {formattedDate}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {questions.map((item, index) => (
+          {Object.entries(answers).map(([question, answer], index) => (
             <div key={index} className="space-y-1">
-              <h4 className="text-sm font-medium">{item.question}</h4>
-              <p className="text-sm text-muted-foreground">{item.answer}</p>
+              <h4 className="text-sm font-medium">{question}</h4>
+              <p className="text-sm text-muted-foreground">{answer as string}</p>
             </div>
           ))}
         </div>

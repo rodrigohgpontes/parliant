@@ -16,22 +16,20 @@ export function Header() {
                     <span className="text-xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Parliant.AI</span>
                 </div>
                 {showNavigation && (
-                    <>
-                        <nav className="hidden md:flex items-center gap-6">
-                            <a href="#what-is-it" className="text-sm font-medium hover:text-primary">
-                                What is it
-                            </a>
-                            <a href="#benefits" className="text-sm font-medium hover:text-primary">
-                                Benefits
-                            </a>
-                            <a href="#pricing" className="text-sm font-medium hover:text-primary">
-                                Pricing
-                            </a>
-                        </nav>
-                        <Navigation />
-                        <MobileMenu />
-                    </>
+                    <nav className="hidden md:flex items-center gap-6">
+                        <a href="#what-is-it" className="text-sm font-medium hover:text-primary">
+                            What is it
+                        </a>
+                        <a href="#benefits" className="text-sm font-medium hover:text-primary">
+                            Benefits
+                        </a>
+                        <a href="#pricing" className="text-sm font-medium hover:text-primary">
+                            Pricing
+                        </a>
+                    </nav>
                 )}
+                <Navigation />
+                <MobileMenu />
             </div>
         </header>
     );

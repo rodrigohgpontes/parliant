@@ -45,9 +45,21 @@ export async function getAuthenticatedSurveys() {
         throw new Error("Not authenticated");
     }
 
+    // First get the user's UUID from the users table
+    const userResult = await db`
+        SELECT id FROM users 
+        WHERE auth0_id = ${user.sub}
+    `;
+
+    if (!userResult?.length) {
+        throw new Error(`User not found in database for auth0_id: ${user.sub}`);
+    }
+
+    const userId = userResult[0].id;
+
     const result = await db`
     SELECT * FROM surveys 
-    WHERE user_id = ${user.sub}
+    WHERE user_id = ${userId}
     ORDER BY created_at DESC
   `;
     return result;
@@ -60,9 +72,21 @@ export async function getAuthenticatedSurvey(id: string): Promise<Survey | null>
         throw new Error("Not authenticated");
     }
 
+    // First get the user's UUID from the users table
+    const userResult = await db`
+        SELECT id FROM users 
+        WHERE auth0_id = ${user.sub}
+    `;
+
+    if (!userResult?.length) {
+        throw new Error(`User not found in database for auth0_id: ${user.sub}`);
+    }
+
+    const userId = userResult[0].id;
+
     const result = await db`
     SELECT * FROM surveys 
-    WHERE id = ${id} AND user_id = ${user.sub}
+    WHERE id = ${id} AND user_id = ${userId}
   ` as unknown as Survey[];
 
     if (!result.length) {
@@ -87,6 +111,17 @@ export async function createAuthenticatedSurvey(data: FormData) {
         throw new Error("Not authenticated");
     }
 
+    // First get the user's UUID from the users table
+    const userResult = await db`
+        SELECT id FROM users 
+        WHERE auth0_id = ${user.sub}
+    `;
+
+    if (!userResult?.length) {
+        throw new Error(`User not found in database for auth0_id: ${user.sub}`);
+    }
+
+    const userId = userResult[0].id;
     const title = data.get("title") as string;
     const description = data.get("description") as string;
 
@@ -96,7 +131,7 @@ export async function createAuthenticatedSurvey(data: FormData) {
 
     await db`
     INSERT INTO surveys (user_id, title, description)
-    VALUES (${user.sub}, ${title}, ${description})
+    VALUES (${userId}, ${title}, ${description})
   `;
     await revalidateDashboard();
 }
@@ -108,6 +143,17 @@ export async function updateAuthenticatedSurvey(id: string, data: FormData) {
         throw new Error("Not authenticated");
     }
 
+    // First get the user's UUID from the users table
+    const userResult = await db`
+        SELECT id FROM users 
+        WHERE auth0_id = ${user.sub}
+    `;
+
+    if (!userResult?.length) {
+        throw new Error(`User not found in database for auth0_id: ${user.sub}`);
+    }
+
+    const userId = userResult[0].id;
     const title = data.get("title") as string;
     const description = data.get("description") as string;
 
@@ -118,7 +164,7 @@ export async function updateAuthenticatedSurvey(id: string, data: FormData) {
     await db`
     UPDATE surveys 
     SET title = ${title}, description = ${description}
-    WHERE id = ${id} AND user_id = ${user.sub}
+    WHERE id = ${id} AND user_id = ${userId}
   `;
     await revalidateSurveyAndDashboard(Number(id));
 }
@@ -130,9 +176,21 @@ export async function deleteAuthenticatedSurvey(id: string) {
         throw new Error("Not authenticated");
     }
 
+    // First get the user's UUID from the users table
+    const userResult = await db`
+        SELECT id FROM users 
+        WHERE auth0_id = ${user.sub}
+    `;
+
+    if (!userResult?.length) {
+        throw new Error(`User not found in database for auth0_id: ${user.sub}`);
+    }
+
+    const userId = userResult[0].id;
+
     await db`
     DELETE FROM surveys 
-    WHERE id = ${id} AND user_id = ${user.sub}
+    WHERE id = ${id} AND user_id = ${userId}
   `;
     await revalidateDashboard();
 } 

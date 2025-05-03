@@ -30,11 +30,6 @@ export async function middleware(request: NextRequest) {
       // Redirect to verification page for protected routes
       return NextResponse.redirect(new URL("/verify-email", request.url));
     }
-
-    // If user is on public pages, redirect to dashboard
-    if (!pathname.startsWith("/dashboard")) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
   } else {
     // If user is not logged in and trying to access verify-email page
     if (pathname === "/verify-email") {
@@ -55,6 +50,6 @@ export const config = {
     "/signup",
     "/api/auth/:path*",
     "/auth/:path*",
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)"
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|logo-small.png).*)"
   ]
 };

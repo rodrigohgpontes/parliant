@@ -1,68 +1,52 @@
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { BarChart, Edit, Share2, Trash2 } from "lucide-react";
-import Link from "next/link";
-import { deleteSurvey } from "@/lib/actions/survey-actions";
+"use client";
 
-interface Survey {
-  id: string;
-  title: string;
-  description?: string;
-  created_at: Date;
-  updated_at: Date;
-  user_id: string;
-  is_active?: boolean;
-}
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { deleteSurveyServerAction } from "@/lib/actions/survey-server-actions";
+import Link from "next/link";
+import { Trash2 } from "lucide-react";
+import { getColorFromId } from "./activity-chart";
 
 interface SurveyCardProps {
-  survey: Survey;
+  survey: {
+    id: string;
+    title: string;
+    description?: string;
+    created_at: Date;
+    updated_at: Date;
+    user_id: string;
+    is_active: boolean;
+  };
 }
 
 export function SurveyCard({ survey }: SurveyCardProps) {
-  const formattedDate = new Date(survey.created_at).toLocaleDateString();
+  const handleDelete = async () => {
+    await deleteSurveyServerAction(survey.id);
+  };
+
+  const color = getColorFromId(survey.id);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{survey.title}</CardTitle>
-        <CardDescription>Created on {formattedDate}</CardDescription>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: color }} />
+          <CardTitle>{survey.title}</CardTitle>
+        </div>
+        {survey.description && <CardDescription>{survey.description}</CardDescription>}
       </CardHeader>
       <CardContent>
-        <p className="text-sm text-muted-foreground">{survey.description || "No description provided."}</p>
+        <p className="text-sm text-gray-500">
+          Created: {new Date(survey.created_at).toLocaleDateString()}
+        </p>
       </CardContent>
-      <CardFooter className="flex flex-wrap gap-2">
+      <CardFooter className="flex justify-between">
         <Link href={`/dashboard/surveys/${survey.id}`}>
-          <Button variant="outline" size="sm">
-            View Details
-          </Button>
+          <Button variant="outline">View Details</Button>
         </Link>
-        <Link href={`/dashboard/surveys/${survey.id}/responses`}>
-          <Button variant="outline" size="sm">
-            <BarChart className="mr-1 h-4 w-4" />
-            Responses
-          </Button>
-        </Link>
-        <div className="ml-auto flex gap-2">
-          <Link href={`/dashboard/surveys/${survey.id}/share`}>
-            <Button variant="outline" size="icon">
-              <Share2 className="h-4 w-4" />
-            </Button>
-          </Link>
-          <Link href={`/dashboard/surveys/${survey.id}/edit`}>
-            <Button variant="outline" size="icon">
-              <Edit className="h-4 w-4" />
-            </Button>
-          </Link>
-          <form
-            action={async () => {
-              await deleteSurvey(survey.id);
-            }}
-          >
-            <Button variant="outline" size="icon" type="submit" className="text-destructive hover:bg-destructive/10">
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </form>
-        </div>
+        <Button variant="destructive" onClick={handleDelete}>
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </CardFooter>
     </Card>
   );

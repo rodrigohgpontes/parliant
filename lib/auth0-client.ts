@@ -8,5 +8,13 @@ export const auth0 = new Auth0Client({
     secret: process.env.AUTH0_SECRET,
     authorizationParameters: {
         scope: 'openid profile email',
+        response_type: 'code',
+        audience: process.env.AUTH0_AUDIENCE,
+    },
+    session: {
+        cookie: {
+            sameSite: 'lax',
+            secure: true,
+        },
     },
 }); 

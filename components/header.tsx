@@ -6,6 +6,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { useUser } from "@auth0/nextjs-auth0/client";
 
 interface HeaderProps {
     showAuth?: boolean;
@@ -13,6 +14,7 @@ interface HeaderProps {
 
 export function Header({ showAuth = true }: HeaderProps) {
     const pathname = usePathname();
+    const { user } = useUser();
     const showNavigation = pathname === "/";
     const isPublicSurvey = pathname.includes("/surveys/") && pathname.includes("/public");
 
@@ -21,10 +23,10 @@ export function Header({ showAuth = true }: HeaderProps) {
         return (
             <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
                 <div className="container flex h-16 items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <Link href="/" className="flex items-center gap-2">
                         <Image src="/logo-small.png" alt="Parliant.AI logo" width={32} height={32} />
                         <span className="text-xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Parliant.AI</span>
-                    </div>
+                    </Link>
                     <Link href="/" target="_blank" rel="noopener noreferrer">
                         <Button variant="outline" size="sm">
                             Create Your Own AI Survey
@@ -38,10 +40,10 @@ export function Header({ showAuth = true }: HeaderProps) {
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
             <div className="container flex h-16 items-center justify-between">
-                <div className="flex items-center gap-2">
+                <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2">
                     <Image src="/logo-small.png" alt="Parliant.AI logo" width={32} height={32} />
                     <span className="text-xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Parliant.AI</span>
-                </div>
+                </Link>
                 {showNavigation && (
                     <nav className="hidden md:flex items-center gap-6">
                         <a href="#what-is-it" className="text-sm font-medium hover:text-primary">

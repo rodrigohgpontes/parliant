@@ -1,8 +1,10 @@
+import { ConversationCell } from "@/components/conversation-cell";
+import { SummaryCell } from "@/components/summary-cell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { getSurveyServerAction } from "@/lib/actions/survey-server-actions";
-import { getResponsesServer } from "@/lib/actions/server-data-actions";
-import { Edit, Share2, ArrowLeft, BarChart, Users, Clock, Activity } from "lucide-react";
+import { getSurveyServer } from "@/lib/actions/server-data-actions";
+import { getResponsesServer, updateResponseSummary, updateSurveySummary } from "@/lib/actions/server-data-actions";
+import { ArrowLeft, BarChart, Users, Clock, Activity, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -14,14 +16,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { format } from "date-fns";
+import { generateSurveySummary } from "@/lib/actions/ai-actions";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { generateSummary } from "@/lib/actions/ai-actions";
+import { revalidatePath } from "next/cache";
 
-export default async function SurveyDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string; }>;
-}) {
+interface PageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+export default async function SurveyDetailsPage({ params }: PageProps) {
   const { id } = await params;
-  const survey = await getSurveyServerAction(id);
+  const survey = await getSurveyServer(id);
   const responses = await getResponsesServer(id);
 
   if (!survey) {
@@ -41,27 +50,19 @@ export default async function SurveyDetailPage({
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold">{survey.title}</h1>
+          <h1 className="text-3xl font-bold">{survey.objective}</h1>
           <p className="text-muted-foreground mt-1">Survey details and responses</p>
         </div>
       </div>
 
-      <div className="flex items-center justify-end">
-        <div className="flex gap-2">
-          <Link href={`/dashboard/surveys/${survey.id}/edit`}>
-            <Button variant="outline">
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Survey
-            </Button>
-          </Link>
-          <Link href={`/dashboard/surveys/${survey.id}/share`}>
-            <Button>
-              <Share2 className="mr-2 h-4 w-4" />
-              Share
-            </Button>
-          </Link>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Orientations</CardTitle>
+          <CardDescription>
+            {survey.orientations || "No orientations provided."}
+          </CardDescription>
+        </CardHeader>
+      </Card>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
@@ -104,14 +105,82 @@ export default async function SurveyDetailPage({
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Survey Details</CardTitle>
-          <CardDescription>
-            {survey.description || "No description provided."}
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold">{survey.objective}</h1>
+          <p className="text-muted-foreground mt-2">
+            {survey.is_active ? "Active" : "Inactive"} • {responses.length} responses
+          </p>
+        </div>
+      </div>
+
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Survey Summary</h2>
+        {survey.survey_summary ? (
+          <div className="bg-muted/50 rounded-lg p-6">
+            <p className="whitespace-pre-wrap">
+              {survey.survey_summary}
+            </p>
+          </div>
+        ) : (
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <form action={async (formData) => {
+                  "use server";
+
+                  // Get the responses from the database again to ensure we have the latest data
+                  const currentResponses = await getResponsesServer(survey.id);
+                  console.log('>> currentResponses ', currentResponses);
+
+                  // Find completed responses without summaries
+                  const responsesToProcess = currentResponses.filter(r =>
+                    r.completed_at && // Only completed responses
+                    !r.summary // Only those without a summary
+                  );
+                  console.log('>> responsesToProcess ', responsesToProcess);
+
+                  // Generate summaries for each response
+                  for (const response of responsesToProcess) {
+                    const result = await generateSummary(response.conversation);
+                    if (result.success && result.summary) {
+                      await updateResponseSummary(response.id, result.summary);
+                      // Refresh the page after each summary is generated
+                      revalidatePath(`/dashboard/surveys/${survey.id}`);
+                    }
+                  }
+
+                  // Collect all response summaries (including newly generated ones)
+                  const allResponseSummaries = currentResponses
+                    .filter(r => r.completed_at && r.summary)
+                    .map(r => r.summary!);
+
+                  // Generate the survey summary using the response summaries
+                  const summary = await generateSurveySummary(
+                    survey.objective,
+                    survey.orientations,
+                    allResponseSummaries
+                  );
+                  if (summary) {
+                    await updateSurveySummary(survey.id, summary);
+                    // Final refresh to show the survey summary
+                    revalidatePath(`/dashboard/surveys/${survey.id}`);
+                  }
+                }}>
+                  <Button type="submit" variant="outline">
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate AI Survey Summary
+                  </Button>
+                </form>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="start" className="max-w-[300px]">
+                <p>This will first generate summaries for all completed responses,</p>
+                <p>then create a comprehensive survey summary.</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
 
       <Card>
         <CardHeader>
@@ -131,7 +200,7 @@ export default async function SurveyDetailPage({
                   <h2 className="text-xl font-medium text-gray-900">No responses yet</h2>
                   <p className="text-muted-foreground mt-2">Share your survey to start collecting responses</p>
                 </div>
-                <Link href={`/dashboard/surveys/${survey.id}/share`}>
+                <Link href={`/dashboard/surveys/${id}/share`}>
                   <Button>
                     <Share2 className="mr-2 h-4 w-4" />
                     Share Survey
@@ -144,20 +213,41 @@ export default async function SurveyDetailPage({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Respondent</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Submitted</TableHead>
-                    <TableHead>Response</TableHead>
+                    <TableHead className="w-[200px]">Respondent</TableHead>
+                    <TableHead className="w-[100px]">Status</TableHead>
+                    <TableHead className="w-[300px]">Conversation</TableHead>
+                    <TableHead className="w-[300px]">Summary</TableHead>
+                    <TableHead className="w-[150px]">Started</TableHead>
+                    <TableHead className="w-[150px]">Completed</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {responses.map((response) => (
                     <TableRow key={response.id}>
-                      <TableCell className="font-medium">{response.respondent_name || "Anonymous"}</TableCell>
-                      <TableCell>{response.respondent_email || "-"}</TableCell>
-                      <TableCell>{new Date(response.completed_at).toLocaleDateString()}</TableCell>
-                      <TableCell className="max-w-[300px] truncate">
-                        {typeof response.data === 'object' ? JSON.stringify(response.data) : response.data}
+                      <TableCell className="max-w-[200px] truncate">
+                        {response.respondent_name || response.respondent_email || 'Anonymous'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={response.completed_at ? "default" : "secondary"}>
+                          {response.completed_at ? "Completed" : "In Progress"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-[300px]">
+                        <ConversationCell conversation={response.conversation} />
+                      </TableCell>
+                      <TableCell className="max-w-[300px]">
+                        <SummaryCell
+                          summary={response.summary ?? null}
+                          conversation={response.conversation}
+                          responseId={response.id}
+                          isGenerating={false}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(response.created_at), "PPP")}
+                      </TableCell>
+                      <TableCell>
+                        {response.completed_at ? format(new Date(response.completed_at), "PPP") : '-'}
                       </TableCell>
                     </TableRow>
                   ))}

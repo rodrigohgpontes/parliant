@@ -31,8 +31,8 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/verify-email", request.url));
     }
   } else {
-    // If user is not logged in and trying to access verify-email page
-    if (pathname === "/verify-email") {
+    // If user is not logged in and trying to access protected routes
+    if (pathname.startsWith("/dashboard") || pathname === "/verify-email") {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }

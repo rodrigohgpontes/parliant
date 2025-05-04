@@ -12,7 +12,7 @@ interface Response {
 
 interface Survey {
     id: string;
-    title: string;
+    objective: string;
 }
 
 interface ActivityChartProps {
@@ -74,7 +74,7 @@ export function ActivityChart({ responses, surveys }: ActivityChartProps) {
             .map(([date, surveyCounts]) => {
                 const data: { [key: string]: any; } = { date };
                 surveys.forEach(survey => {
-                    data[survey.title] = surveyCounts[survey.id] || 0;
+                    data[survey.objective] = surveyCounts[survey.id] || 0;
                 });
                 return data;
             });
@@ -130,7 +130,7 @@ export function ActivityChart({ responses, surveys }: ActivityChartProps) {
                         {surveys.map(survey => (
                             <Bar
                                 key={survey.id}
-                                dataKey={survey.title}
+                                dataKey={survey.objective}
                                 stackId="a"
                                 fill={getColorFromId(survey.id)}
                             />

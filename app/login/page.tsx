@@ -25,7 +25,7 @@ export default function LoginPage() {
         </div>
         <div className="mt-8">
           <a
-            href="/auth/login"
+            href={`/auth/login?returnTo=${encodeURIComponent("/dashboard")}`}
             className="flex w-full justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
           >
             Sign in with Auth0

@@ -1,5 +1,7 @@
 import { ConversationCell } from "@/components/conversation-cell";
 import { SummaryCell } from "@/components/summary-cell";
+import { ExportResponsesButton } from "@/components/export-responses-button";
+import { ExportPDFButton } from "@/components/export-pdf-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSurveyServer } from "@/lib/actions/server-data-actions";
@@ -111,6 +113,10 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
           <p className="text-muted-foreground mt-2">
             {survey.is_active ? "Active" : "Inactive"} • {responses.length} responses
           </p>
+        </div>
+        <div className="flex gap-2">
+          <ExportResponsesButton surveyId={survey.id} surveyObjective={survey.objective} />
+          <ExportPDFButton surveyId={survey.id} surveyObjective={survey.objective} />
         </div>
       </div>
 

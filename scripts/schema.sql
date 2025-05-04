@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS surveys (
     max_characters integer,
     survey_summary text,
     survey_tags text[],
+    first_question text,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
@@ -41,8 +42,10 @@ CREATE TABLE IF NOT EXISTS responses (
     conversation jsonb NOT NULL,
     summary text,
     tags text[],
+    insight_level integer,
     completed_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     deleted_at timestamp with time zone,
+    updated_at timestamp with time zone,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -65,6 +68,11 @@ ALTER TABLE users
 ALTER TABLE users
     ADD CONSTRAINT IF NOT EXISTS users_email_key
     UNIQUE (email);
+
+-- Add constraint to ensure insight level is between 0 and 10
+ALTER TABLE responses
+    ADD CONSTRAINT check_insight_level 
+    CHECK (insight_level IS NULL OR (insight_level >= 0 AND insight_level <= 10));
 
 -- Add constraint to ensure response tags are a subset of survey tags
 ALTER TABLE responses

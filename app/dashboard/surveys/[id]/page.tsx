@@ -5,7 +5,7 @@ import { ExportPDFButton } from "@/components/export-pdf-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSurveyServer } from "@/lib/actions/server-data-actions";
-import { getResponsesServer, updateResponseSummary, updateSurveySummary } from "@/lib/actions/server-data-actions";
+import { getResponsesServer, updateResponseSummary, updateSurveySummary, toggleSurveyStatus } from "@/lib/actions/server-data-actions";
 import { ArrowLeft, BarChart, Users, Clock, Activity, Sparkles, Copy } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -109,12 +109,29 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <Badge variant={survey.is_active ? "default" : "secondary"}>
-              {survey.is_active ? "Active" : "Inactive"}
-            </Badge>
-            <p className="text-xs text-muted-foreground mt-2">
-              {survey.is_active ? 'Survey is accepting responses' : 'Survey is not accepting responses'}
-            </p>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Badge variant={survey.is_active ? "default" : "secondary"}>
+                  {survey.is_active ? "Active" : "Inactive"}
+                </Badge>
+                <p className="text-xs text-muted-foreground">
+                  {survey.is_active ? 'Survey is accepting responses' : 'Survey is not accepting responses'}
+                </p>
+              </div>
+              <form action={async () => {
+                "use server";
+                await toggleSurveyStatus(survey.id);
+                revalidatePath(`/dashboard/surveys/${survey.id}`);
+              }}>
+                <Button
+                  variant={survey.is_active ? "destructive" : "default"}
+                  size="sm"
+                  className={survey.is_active ? "bg-red-100 hover:bg-red-200 text-red-700" : "bg-green-100 hover:bg-green-200 text-green-700"}
+                >
+                  {survey.is_active ? "Close Survey" : "Activate"}
+                </Button>
+              </form>
+            </div>
           </CardContent>
         </Card>
         <Card>

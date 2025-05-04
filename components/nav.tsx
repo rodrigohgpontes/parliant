@@ -18,7 +18,7 @@ export function Navigation() {
                             Dashboard
                         </Button>
                     </Link>
-                    <Link href="/auth/logout">
+                    <Link href="/auth/logout" prefetch={false}>
                         <Button variant="ghost" size="sm">
                             Log out
                         </Button>

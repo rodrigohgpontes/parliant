@@ -8,7 +8,11 @@ import { useState } from "react";
 import { ThemeToggle } from "./theme-toggle";
 import { useUser } from "@auth0/nextjs-auth0";
 
-export function MobileMenu() {
+interface MobileMenuProps {
+  showAuth?: boolean;
+}
+
+export function MobileMenu({ showAuth = true }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
   const { user, isLoading } = useUser();
 
@@ -42,33 +46,35 @@ export function MobileMenu() {
           </Link>
           <div className="flex items-center justify-between pt-4">
             <ThemeToggle />
-            <div className="flex gap-2">
-              {isLoading ? null : user ? (
-                <>
-                  <Link href="/dashboard" onClick={() => setOpen(false)}>
-                    <Button variant="outline" size="sm">
-                      Dashboard
-                    </Button>
-                  </Link>
-                  <Link href="/auth/logout" onClick={() => setOpen(false)}>
-                    <Button variant="ghost" size="sm">
-                      Log out
-                    </Button>
-                  </Link>
-                </>
-              ) : (
-                <>
-                  <Link href="/login" onClick={() => setOpen(false)}>
-                    <Button variant="outline" size="sm">
-                      Log in
-                    </Button>
-                  </Link>
-                  <Link href="/signup" onClick={() => setOpen(false)}>
-                    <Button size="sm">Sign up</Button>
-                  </Link>
-                </>
-              )}
-            </div>
+            {showAuth && (
+              <div className="flex gap-2">
+                {isLoading ? null : user ? (
+                  <>
+                    <Link href="/dashboard" onClick={() => setOpen(false)}>
+                      <Button variant="outline" size="sm">
+                        Dashboard
+                      </Button>
+                    </Link>
+                    <Link href="/auth/logout" onClick={() => setOpen(false)}>
+                      <Button variant="ghost" size="sm">
+                        Log out
+                      </Button>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/login" onClick={() => setOpen(false)}>
+                      <Button variant="outline" size="sm">
+                        Log in
+                      </Button>
+                    </Link>
+                    <Link href="/signup" onClick={() => setOpen(false)}>
+                      <Button size="sm">Sign up</Button>
+                    </Link>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </SheetContent>

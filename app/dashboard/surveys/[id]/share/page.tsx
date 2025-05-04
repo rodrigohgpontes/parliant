@@ -18,7 +18,8 @@ export default async function ShareSurveyPage({
     notFound();
   }
 
-  const surveyUrl = `${process.env.AUTH0_BASE_URL}/surveys/${surveyId}`;
+  const surveyUrl = `${process.env.NEXT_PUBLIC_APP_BASE_URL}/surveys/${surveyId}`;
+  console.log('>>> env', process.env);
 
   return (
     <div>

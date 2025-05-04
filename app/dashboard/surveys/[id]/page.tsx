@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSurveyServer } from "@/lib/actions/server-data-actions";
 import { getResponsesServer, updateResponseSummary, updateSurveySummary } from "@/lib/actions/server-data-actions";
-import { ArrowLeft, BarChart, Users, Clock, Activity, Sparkles } from "lucide-react";
+import { ArrowLeft, BarChart, Users, Clock, Activity, Sparkles, Copy } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -23,6 +23,8 @@ import { generateSurveySummary } from "@/lib/actions/ai-actions";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { generateSummary } from "@/lib/actions/ai-actions";
 import { revalidatePath } from "next/cache";
+import { Input } from "@/components/ui/input";
+import { CopyButton } from "@/components/copy-button";
 
 interface PageProps {
   params: Promise<{
@@ -56,6 +58,28 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
           <p className="text-muted-foreground mt-1">Survey details and responses</p>
         </div>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Survey Response Link</CardTitle>
+          <CardDescription>
+            Share this link with respondents to collect responses
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-2 w-fit-content">
+            <div className="flex-shrink-0">
+              <CopyButton text={`${process.env.NEXT_PUBLIC_APP_BASE_URL}/surveys/${survey.id}`} />
+            </div>
+            <Input
+              readOnly
+              value={`${process.env.NEXT_PUBLIC_APP_BASE_URL}/surveys/${survey.id}`}
+              className="font-mono flex-1"
+            />
+
+          </div>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -208,7 +232,6 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
                 </div>
                 <Link href={`/dashboard/surveys/${id}/share`}>
                   <Button>
-                    <Share2 className="mr-2 h-4 w-4" />
                     Share Survey
                   </Button>
                 </Link>

@@ -4,9 +4,36 @@ import { Navigation } from "@/components/nav";
 import { MobileMenu } from "@/components/mobile-menu";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
-export function Header() {
-    const showNavigation = usePathname() === "/";
+interface HeaderProps {
+    showAuth?: boolean;
+}
+
+export function Header({ showAuth = true }: HeaderProps) {
+    const pathname = usePathname();
+    const showNavigation = pathname === "/";
+    const isPublicSurvey = pathname.includes("/surveys/") && pathname.includes("/public");
+
+    // Skip auth checks for public survey pages
+    if (isPublicSurvey) {
+        return (
+            <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
+                <div className="container flex h-16 items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Image src="/logo-small.png" alt="Parliant.AI logo" width={32} height={32} />
+                        <span className="text-xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Parliant.AI</span>
+                    </div>
+                    <Link href="/" target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" size="sm">
+                            Create Your Own AI Survey
+                        </Button>
+                    </Link>
+                </div>
+            </header>
+        );
+    }
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
@@ -28,8 +55,8 @@ export function Header() {
                         </a>
                     </nav>
                 )}
-                <Navigation />
-                <MobileMenu />
+                {showAuth && <Navigation />}
+                <MobileMenu showAuth={showAuth} />
             </div>
         </header>
     );

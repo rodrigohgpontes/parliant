@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
-import { Send } from "lucide-react";
+import { Send, Shuffle } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Thermometer } from "@/components/thermometer";
+import { Parly } from "@/components/parly";
 
 interface Survey {
   id: string;
@@ -43,6 +44,84 @@ const LoadingDots = () => {
   );
 };
 
+function getParlyMood(insightLevel: number, explanation: string | null) {
+  // Default to neutral state
+  let color: "blue" | "green" | "red" | "yellow" = "blue";
+  let energy: "very_low" | "low" | "neutral" | "high" | "very_high" = "neutral";
+  let eyes: "atentive" | "excited" | "joy" | "sad" | "annoyed" = "atentive";
+  let mouth: "closed_satisfied" | "open_jubilous" | "closed_disappointed" = "closed_satisfied";
+  let emote: "thinking" | "heart" | "confused" | undefined = undefined;
+
+  // Determine color based on insight level
+  if (insightLevel >= 8) {
+    color = "green";
+  } else if (insightLevel >= 6) {
+    color = "blue";
+  } else if (insightLevel >= 4) {
+    color = "yellow";
+  } else {
+    color = "red";
+  }
+
+  // Determine energy level
+  if (insightLevel >= 8) {
+    energy = "very_high";
+  } else if (insightLevel >= 6) {
+    energy = "high";
+  } else if (insightLevel >= 4) {
+    energy = "neutral";
+  } else if (insightLevel >= 2) {
+    energy = "low";
+  } else {
+    energy = "very_low";
+  }
+
+  // Determine facial expression
+  if (insightLevel >= 8) {
+    eyes = "excited";
+    mouth = "open_jubilous";
+    emote = "heart";
+  } else if (insightLevel >= 6) {
+    eyes = "joy";
+    mouth = "open_jubilous";
+  } else if (insightLevel >= 4) {
+    eyes = "atentive";
+    mouth = "closed_satisfied";
+    emote = "thinking";
+  } else if (insightLevel >= 2) {
+    eyes = "annoyed";
+    mouth = "closed_disappointed";
+    emote = "confused";
+  } else {
+    eyes = "sad";
+    mouth = "closed_disappointed";
+  }
+
+  return { color, energy, eyes, mouth, emote };
+}
+
+function getRandomParlyMood() {
+  const colors: ("blue" | "green" | "red" | "yellow")[] = ["blue", "green", "red", "yellow"];
+  const energies: ("very_low" | "low" | "neutral" | "high" | "very_high")[] = ["very_low", "low", "neutral", "high", "very_high"];
+  const eyes: ("atentive" | "angry" | "suspicious" | "sideways" | "confused" | "act_natural" | "buggled" | "excited" | "crazy" | "meditative" | "joy" | "pain" | "sad" | "astonished" | "annoyed")[] = [
+    "atentive", "angry", "suspicious", "sideways", "confused", "act_natural", "buggled", "excited", "crazy", "meditative", "joy", "pain", "sad", "astonished", "annoyed"
+  ];
+  const mouths: ("open_delighted" | "closed_suspicious" | "closed_disappointed" | "closed_muted" | "open_angry" | "open_furious" | "open_astonished" | "closed_awkward" | "closed_shocked" | "closed_confused" | "closed_frustrated" | "open_snarky" | "open_jubilous" | "closed_emotional" | "closed_satisfied" | "closed_droopy" | "closed_fun" | "closed_crazy" | "closed_struggling" | "open_devastated")[] = [
+    "open_delighted", "closed_suspicious", "closed_disappointed", "closed_muted", "open_angry", "open_furious", "open_astonished", "closed_awkward", "closed_shocked", "closed_confused", "closed_frustrated", "open_snarky", "open_jubilous", "closed_emotional", "closed_satisfied", "closed_droopy", "closed_fun", "closed_crazy", "closed_struggling", "open_devastated"
+  ];
+  const emotes: ("heart" | "stressed" | "muted" | "confused" | "tired" | "thinking" | "sleeping" | "singing" | "startled" | "astonished" | "angry" | "furious" | "hot" | "sweating" | "heartbeat" | "skull" | "fire" | "lightning")[] = [
+    "heart", "stressed", "muted", "confused", "tired", "thinking", "sleeping", "singing", "startled", "astonished", "angry", "furious", "hot", "sweating", "heartbeat", "skull", "fire", "lightning"
+  ];
+
+  return {
+    color: colors[Math.floor(Math.random() * colors.length)],
+    energy: energies[Math.floor(Math.random() * energies.length)],
+    eyes: eyes[Math.floor(Math.random() * eyes.length)],
+    mouth: mouths[Math.floor(Math.random() * mouths.length)],
+    emote: Math.random() > 0.3 ? emotes[Math.floor(Math.random() * emotes.length)] : undefined
+  };
+}
+
 export default function SurveyResponsePage() {
   const params = useParams();
   const [survey, setSurvey] = useState<Survey | null>(null);
@@ -59,6 +138,7 @@ export default function SurveyResponsePage() {
   const [insightExplanation, setInsightExplanation] = useState<string | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [randomMood, setRandomMood] = useState(getRandomParlyMood());
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -363,6 +443,10 @@ export default function SurveyResponsePage() {
     }
   };
 
+  const handleRandomize = () => {
+    setRandomMood(getRandomParlyMood());
+  };
+
   if (isSubmitted) {
     return (
       <div className="container max-w-2xl py-12">
@@ -400,11 +484,21 @@ export default function SurveyResponsePage() {
         </div>
 
         <div className="flex gap-4">
-          <Thermometer
-            value={insightLevel}
-            max={10}
-            explanation={insightExplanation || undefined}
-          />
+          <div className="flex items-center gap-4">
+            <Thermometer value={insightLevel} max={10} explanation={insightExplanation || undefined} />
+            <div className="flex flex-col items-center gap-2">
+              <Parly {...randomMood} className="w-48 h-48" />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRandomize}
+                className="flex items-center gap-2"
+              >
+                <Shuffle className="h-4 w-4" />
+                Randomize
+              </Button>
+            </div>
+          </div>
           <div className="flex-1 flex flex-col h-[600px] border rounded-lg overflow-hidden">
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.map((message, index) => (

@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS responses (
     summary text,
     tags text[],
     insight_level integer,
+    insight_explanation text,
     completed_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     deleted_at timestamp with time zone,
     updated_at timestamp with time zone,

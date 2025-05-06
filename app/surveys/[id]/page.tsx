@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Thermometer } from "@/components/thermometer";
 import { Parly } from "@/components/parly";
+import Mascot from '@/app/components/Mascot';
 
 interface Survey {
   id: string;
@@ -48,7 +49,7 @@ function getParlyMood(insightLevel: number, explanation: string | null) {
   // Default to neutral state
   let color: "blue" | "green" | "red" | "yellow" = "blue";
   let energy: "very_low" | "low" | "neutral" | "high" | "very_high" = "neutral";
-  let eyes: "atentive" | "excited" | "joy" | "sad" | "annoyed" = "atentive";
+  let eyes: "tense" | "absent" | "uninstered" | "sad" | "uncomfortable" = "tense";
   let mouth: "closed_satisfied" | "open_jubilous" | "closed_disappointed" = "closed_satisfied";
   let emote: "thinking" | "heart" | "confused" | undefined = undefined;
 
@@ -78,18 +79,18 @@ function getParlyMood(insightLevel: number, explanation: string | null) {
 
   // Determine facial expression
   if (insightLevel >= 8) {
-    eyes = "excited";
+    eyes = "absent";
     mouth = "open_jubilous";
     emote = "heart";
   } else if (insightLevel >= 6) {
-    eyes = "joy";
+    eyes = "uninstered";
     mouth = "open_jubilous";
   } else if (insightLevel >= 4) {
-    eyes = "atentive";
+    eyes = "tense";
     mouth = "closed_satisfied";
     emote = "thinking";
   } else if (insightLevel >= 2) {
-    eyes = "annoyed";
+    eyes = "uncomfortable";
     mouth = "closed_disappointed";
     emote = "confused";
   } else {
@@ -103,8 +104,8 @@ function getParlyMood(insightLevel: number, explanation: string | null) {
 function getRandomParlyMood() {
   const colors: ("blue" | "green" | "red" | "yellow")[] = ["blue", "green", "red", "yellow"];
   const energies: ("very_low" | "low" | "neutral" | "high" | "very_high")[] = ["very_low", "low", "neutral", "high", "very_high"];
-  const eyes: ("atentive" | "angry" | "suspicious" | "sideways" | "confused" | "act_natural" | "buggled" | "excited" | "crazy" | "meditative" | "joy" | "pain" | "sad" | "astonished" | "annoyed")[] = [
-    "atentive", "angry", "suspicious", "sideways", "confused", "act_natural", "buggled", "excited", "crazy", "meditative", "joy", "pain", "sad", "astonished", "annoyed"
+  const eyes: ("tense" | "angry" | "suspicious" | "sideways" | "confused" | "judgemental" | "determined" | "absent" | "crazy" | "meditative" | "uninstered" | "pain" | "sad" | "bored" | "uncomfortable")[] = [
+    "tense", "angry", "suspicious", "sideways", "confused", "judgemental", "determined", "absent", "crazy", "meditative", "uninstered", "pain", "sad", "bored", "uncomfortable"
   ];
   const mouths: ("open_delighted" | "closed_suspicious" | "closed_disappointed" | "closed_muted" | "open_angry" | "open_furious" | "open_astonished" | "closed_awkward" | "closed_shocked" | "closed_confused" | "closed_frustrated" | "open_snarky" | "open_jubilous" | "closed_emotional" | "closed_satisfied" | "closed_droopy" | "closed_fun" | "closed_crazy" | "closed_struggling" | "open_devastated")[] = [
     "open_delighted", "closed_suspicious", "closed_disappointed", "closed_muted", "open_angry", "open_furious", "open_astonished", "closed_awkward", "closed_shocked", "closed_confused", "closed_frustrated", "open_snarky", "open_jubilous", "closed_emotional", "closed_satisfied", "closed_droopy", "closed_fun", "closed_crazy", "closed_struggling", "open_devastated"
@@ -139,6 +140,7 @@ export default function SurveyResponsePage() {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [randomMood, setRandomMood] = useState(getRandomParlyMood());
+  const [parlyMood, setParlyMood] = useState(getParlyMood(insightLevel, insightExplanation));
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -197,6 +199,10 @@ export default function SurveyResponsePage() {
 
     fetchSurvey();
   }, [params.id]);
+
+  useEffect(() => {
+    setParlyMood(getParlyMood(insightLevel, insightExplanation));
+  }, [insightLevel, insightExplanation]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -487,16 +493,7 @@ export default function SurveyResponsePage() {
           <div className="flex items-center gap-4">
             <Thermometer value={insightLevel} max={10} explanation={insightExplanation || undefined} />
             <div className="flex flex-col items-center gap-2">
-              <Parly {...randomMood} className="w-48 h-48" />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRandomize}
-                className="flex items-center gap-2"
-              >
-                <Shuffle className="h-4 w-4" />
-                Randomize
-              </Button>
+              <Mascot {...parlyMood} className="w-48 h-48" />
             </div>
           </div>
           <div className="flex-1 flex flex-col h-[600px] border rounded-lg overflow-hidden">

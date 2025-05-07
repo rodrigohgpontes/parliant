@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Thermometer } from "@/components/thermometer";
 import { Parly } from "@/components/parly";
 import Mascot from '@/app/components/Mascot';
+import { MascotColor, MascotEnergy, MascotEyes, MascotMouth, MascotEmote } from '@/app/lib/mascot-constants';
 
 interface Survey {
   id: string;
@@ -47,11 +48,11 @@ const LoadingDots = () => {
 
 function getParlyMood(insightLevel: number, explanation: string | null) {
   // Default to neutral state
-  let color: "blue" | "green" | "red" | "yellow" = "blue";
-  let energy: "very_low" | "low" | "neutral" | "high" | "very_high" = "neutral";
-  let eyes: "tense" | "absent" | "uninstered" | "sad" | "uncomfortable" = "tense";
-  let mouth: "closed_satisfied" | "open_jubilous" | "closed_disappointed" = "closed_satisfied";
-  let emote: "thinking" | "heart" | "confused" | undefined = undefined;
+  let color: MascotColor = "blue";
+  let energy: MascotEnergy = "neutral";
+  let eyes: MascotEyes = "tense";
+  let mouth: MascotMouth = "happy";
+  let emote: MascotEmote | undefined = undefined;
 
   // Determine color based on insight level
   if (insightLevel >= 8) {
@@ -80,39 +81,33 @@ function getParlyMood(insightLevel: number, explanation: string | null) {
   // Determine facial expression
   if (insightLevel >= 8) {
     eyes = "absent";
-    mouth = "open_jubilous";
+    mouth = "happy";
     emote = "heart";
   } else if (insightLevel >= 6) {
     eyes = "uninstered";
-    mouth = "open_jubilous";
+    mouth = "happy";
   } else if (insightLevel >= 4) {
     eyes = "tense";
-    mouth = "closed_satisfied";
+    mouth = "happy";
     emote = "thinking";
   } else if (insightLevel >= 2) {
     eyes = "uncomfortable";
-    mouth = "closed_disappointed";
+    mouth = "happy";
     emote = "confused";
   } else {
     eyes = "sad";
-    mouth = "closed_disappointed";
+    mouth = "happy";
   }
 
   return { color, energy, eyes, mouth, emote };
 }
 
 function getRandomParlyMood() {
-  const colors: ("blue" | "green" | "red" | "yellow")[] = ["blue", "green", "red", "yellow"];
-  const energies: ("very_low" | "low" | "neutral" | "high" | "very_high")[] = ["very_low", "low", "neutral", "high", "very_high"];
-  const eyes: ("tense" | "angry" | "suspicious" | "sideways" | "confused" | "judgemental" | "determined" | "absent" | "crazy" | "meditative" | "uninstered" | "pain" | "sad" | "bored" | "uncomfortable")[] = [
-    "tense", "angry", "suspicious", "sideways", "confused", "judgemental", "determined", "absent", "crazy", "meditative", "uninstered", "pain", "sad", "bored", "uncomfortable"
-  ];
-  const mouths: ("open_delighted" | "closed_suspicious" | "closed_disappointed" | "closed_muted" | "open_angry" | "open_furious" | "open_astonished" | "closed_awkward" | "closed_shocked" | "closed_confused" | "closed_frustrated" | "open_snarky" | "open_jubilous" | "closed_emotional" | "closed_satisfied" | "closed_droopy" | "closed_fun" | "closed_crazy" | "closed_struggling" | "open_devastated")[] = [
-    "open_delighted", "closed_suspicious", "closed_disappointed", "closed_muted", "open_angry", "open_furious", "open_astonished", "closed_awkward", "closed_shocked", "closed_confused", "closed_frustrated", "open_snarky", "open_jubilous", "closed_emotional", "closed_satisfied", "closed_droopy", "closed_fun", "closed_crazy", "closed_struggling", "open_devastated"
-  ];
-  const emotes: ("heart" | "stressed" | "muted" | "confused" | "tired" | "thinking" | "sleeping" | "singing" | "startled" | "astonished" | "angry" | "furious" | "hot" | "sweating" | "heartbeat" | "skull" | "fire" | "lightning")[] = [
-    "heart", "stressed", "muted", "confused", "tired", "thinking", "sleeping", "singing", "startled", "astonished", "angry", "furious", "hot", "sweating", "heartbeat", "skull", "fire", "lightning"
-  ];
+  const colors: MascotColor[] = ["blue", "green", "red", "yellow"];
+  const energies: MascotEnergy[] = ["very_low", "low", "neutral", "high", "very_high"];
+  const eyes: MascotEyes[] = ["tense", "absent", "uninstered", "sad", "uncomfortable", "angry", "suspicious", "judgemental", "determined", "crazy", "bored"];
+  const mouths: MascotMouth[] = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u"];
+  const emotes: MascotEmote[] = ["thinking", "heart", "confused"];
 
   return {
     color: colors[Math.floor(Math.random() * colors.length)],
@@ -492,9 +487,9 @@ export default function SurveyResponsePage() {
         <div className="flex gap-4">
           <div className="flex items-center gap-4">
             <Thermometer value={insightLevel} max={10} explanation={insightExplanation || undefined} />
-            <div className="flex flex-col items-center gap-2">
+            {/* <div className="flex flex-col items-center gap-2">
               <Mascot {...parlyMood} className="w-48 h-48" />
-            </div>
+            </div> */}
           </div>
           <div className="flex-1 flex flex-col h-[600px] border rounded-lg overflow-hidden">
             <div className="flex-1 overflow-y-auto p-4 space-y-4">

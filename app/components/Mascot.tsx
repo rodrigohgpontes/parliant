@@ -2,99 +2,115 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { COLORS, ENERGIES, EYES, MOUTHS, EMOTES, MascotColor, MascotEnergy, MascotEyes, MascotMouth, MascotEmote } from '@/app/lib/mascot-constants';
 
 // Base dimensions for the mascot
 const BASE_SIZE = 200;
 
 // Sprite positions and dimensions (original sizes)
+const BODY_POSITIONS = {
+    yellow: {
+        neutral: { x: 300, y: 10 },
+        high: { x: 300, y: 700 },
+        very_low: { x: 300, y: 1500 },
+        very_high: { x: 300, y: 2500 },
+        low: { x: 300, y: 3600 }
+    },
+    blue: {
+        neutral: { x: 1300, y: 0 },
+        high: { x: 1300, y: 700 },
+        very_low: { x: 1300, y: 1500 },
+        very_high: { x: 1300, y: 2500 },
+        low: { x: 1300, y: 3600 }
+    },
+    green: {
+        neutral: { x: 2240, y: 0 },
+        high: { x: 2240, y: 700 },
+        very_low: { x: 2300, y: 1500 },
+        very_high: { x: 2300, y: 2500 },
+        low: { x: 2300, y: 3600 }
+    },
+    red: {
+        neutral: { x: 3170, y: 0 },
+        high: { x: 3180, y: 700 },
+        very_low: { x: 3200, y: 1500 },
+        very_high: { x: 3200, y: 2500 },
+        low: { x: 3200, y: 3600 }
+    }
+} as const;
+
+const EYE_POSITIONS = {
+    tense: { x: 340, y: 350 },
+    absent: { x: 1480, y: 350 },
+    uninstered: { x: 2720, y: 350 },
+    sad: { x: 3860, y: 340 },
+    uncomfortable: { x: 340, y: 1540 },
+    angry: { x: 1500, y: 1520 },
+    suspicious: { x: 2720, y: 1540 },
+    judgemental: { x: 3870, y: 1540 },
+    determined: { x: 380, y: 2660 },
+    crazy: { x: 1520, y: 2640 },
+    bored: { x: 2720, y: 2640 }
+} as const;
+
+const MOUTH_POSITIONS = {
+    happy: { x: 0, y: 0 },
+    unresponsive: { x: 1200, y: 0 },
+    sad: { x: 2400, y: 0 },
+    quiet: { x: 3600, y: 0 },
+    suffering: { x: 0, y: 1200 },
+    smirky: { x: 1200, y: 1200 },
+    tense: { x: 2400, y: 1200 },
+    nervous: { x: 3600, y: 1200 },
+    overwhelmed: { x: 0, y: 2240 },
+    cute: { x: 1200, y: 2240 },
+    shocked: { x: 2400, y: 2240 },
+    disappointed: { x: 3600, y: 2240 },
+    joyful: { x: 0, y: 3600 },
+    scared: { x: 1200, y: 3600 },
+    uncomfortable: { x: 2400, y: 3540 },
+    embarassed: { x: 3600, y: 3540 },
+    frown: { x: 0, y: 4720 },
+    surprised: { x: 1200, y: 4720 },
+    regret: { x: 2400, y: 4720 },
+    fun: { x: 3600, y: 4720 },
+} as const;
+
+const EMOTE_POSITIONS = {
+    thinking: { x: 0, y: 0 },
+    heart: { x: 1200, y: 0 },
+    confused: { x: 2400, y: 0 }
+} as const;
+
 const SPRITE_MAP = {
     bodies: {
         width: 750,
         height: 750,
-        positions: {
-            // Yellow bodies (first column)
-            yellow: {
-                neutral: { x: 300, y: 10 },
-                high: { x: 300, y: 700 },
-                very_low: { x: 300, y: 1500 },
-                very_high: { x: 300, y: 2500 },
-                low: { x: 300, y: 3600 }
-            },
-            // Blue bodies (second column)
-            blue: {
-                neutral: { x: 1300, y: 0 },
-                high: { x: 1300, y: 700 },
-                very_low: { x: 1300, y: 1500 },
-                very_high: { x: 1300, y: 2500 },
-                low: { x: 1300, y: 3600 }
-            },
-            // Green bodies (third column)
-            green: {
-                neutral: { x: 2240, y: 0 },
-                high: { x: 2300, y: 700 },
-                very_low: { x: 2300, y: 1500 },
-                very_high: { x: 2300, y: 2500 },
-                low: { x: 2300, y: 3600 }
-            },
-            // Red bodies (fourth column)
-            red: {
-                neutral: { x: 3170, y: 0 },
-                high: { x: 3200, y: 700 },
-                very_low: { x: 3200, y: 1500 },
-                very_high: { x: 3200, y: 2500 },
-                low: { x: 3200, y: 3600 }
-            }
-        }
+        positions: BODY_POSITIONS
     },
     eyes: {
         width: 500,
         height: 500,
-        positions: {
-            tense: { x: 340, y: 350 },
-            absent: { x: 1480, y: 350 },
-            uninstered: { x: 2720, y: 350 },
-            sad: { x: 3860, y: 340 },
-            uncomfortable: { x: 340, y: 1540 },
-            angry: { x: 1500, y: 1520 },
-            suspicious: { x: 2720, y: 1540 },
-            judgemental: { x: 3870, y: 1540 },
-            determined: { x: 380, y: 2660 },
-            crazy: { x: 1520, y: 2640 },
-            bored: { x: 2720, y: 2640 },
-        }
+        positions: EYE_POSITIONS
     },
     mouths: {
-        width: 1200,   // Each mouth sprite is 1200x1200 in a 4800x6000 sheet
+        width: 1200,
         height: 1200,
-        positions: {
-            closed_satisfied: { x: 0, y: 0 },
-            open_jubilous: { x: 1200, y: 0 },
-            closed_disappointed: { x: 2400, y: 0 }
-        }
+        positions: MOUTH_POSITIONS
     },
     emotes: {
-        width: 1200,   // Each emote sprite is 1200x1200 in a 4800x6000 sheet
+        width: 1200,
         height: 1200,
-        positions: {
-            thinking: { x: 0, y: 0 },
-            heart: { x: 1200, y: 0 },
-            confused: { x: 2400, y: 0 }
-        }
+        positions: EMOTE_POSITIONS
     }
-};
-
-const COLORS = ["blue", "green", "red", "yellow"] as const;
-const ENERGIES = ["very_low", "low", "neutral", "high", "very_high"] as const;
-const EYES = ["tense", "absent", "uninstered", "sad", "uncomfortable", "angry", "suspicious", "judgemental", "determined", "crazy", "bored"] as const;
-const MOUTHS = ["closed_satisfied", "open_jubilous", "closed_disappointed"] as const;
-const EMOTES = ["thinking", "heart", "confused"] as const;
+} as const;
 
 interface MascotProps {
-    color: typeof COLORS[number];
-    energy: typeof ENERGIES[number];
-    eyes: typeof EYES[number];
-    mouth: typeof MOUTHS[number];
-    emote?: typeof EMOTES[number];
+    color: MascotColor;
+    energy: MascotEnergy;
+    eyes: MascotEyes;
+    mouth: MascotMouth;
+    emote?: MascotEmote;
     className?: string;
 }
 
@@ -110,11 +126,11 @@ function MascotControls({
     onMouthChange,
     onEmoteChange
 }: MascotProps & {
-    onColorChange: (color: typeof COLORS[number]) => void;
-    onEnergyChange: (energy: typeof ENERGIES[number]) => void;
-    onEyesChange: (eyes: typeof EYES[number]) => void;
-    onMouthChange: (mouth: typeof MOUTHS[number]) => void;
-    onEmoteChange: (emote: typeof EMOTES[number] | undefined) => void;
+    onColorChange: (color: MascotColor) => void;
+    onEnergyChange: (energy: MascotEnergy) => void;
+    onEyesChange: (eyes: MascotEyes) => void;
+    onMouthChange: (mouth: MascotMouth) => void;
+    onEmoteChange: (emote: MascotEmote | undefined) => void;
 }) {
     const cycleValue = <T,>(current: T, values: readonly T[], direction: 'next' | 'prev'): T => {
         const currentIndex = values.indexOf(current);
@@ -237,7 +253,7 @@ export default function Mascot({
                             height={SPRITE_MAP.mouths.height}
                             style={{
                                 objectFit: 'none',
-                                objectPosition: `-${SPRITE_MAP.mouths.positions[currentMouth].x}px -${SPRITE_MAP.mouths.positions[currentMouth].y}px`,
+                                objectPosition: `-${SPRITE_MAP.mouths.positions[currentMouth]?.x}px -${SPRITE_MAP.mouths.positions[currentMouth]?.y}px`,
                                 width: `${SPRITE_MAP.mouths.width}px`,
                                 height: `${SPRITE_MAP.mouths.height}px`,
                                 maxWidth: 'none',

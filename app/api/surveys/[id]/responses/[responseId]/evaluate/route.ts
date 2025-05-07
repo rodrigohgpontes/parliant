@@ -35,8 +35,8 @@ export async function POST(
             messages: [
                 {
                     role: "system",
-                    content: `You are an expert at evaluating the quality and insightfulness of conversations. 
-                    Evaluate the following conversation based on these criteria:
+                    content: `You are an expert at evaluating the quality and insightfulness of the user answers in a conversation. 
+                    The criteria for insightfulness of the user's answers in the following conversation are:
                     1. Depth of responses
                     2. Relevance to the survey objective: ${survey.objective}
                     3. Quality of insights provided

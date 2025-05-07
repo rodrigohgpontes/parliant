@@ -32,7 +32,7 @@ interface Survey {
 }
 
 interface Message {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
 }
 
@@ -211,7 +211,21 @@ export default function SurveyResponsePage() {
       // If this is the first message, create a response record first
       if (!responseId) {
         // Add user message to the conversation first
-        const newMessages = [...messages, { role: "user" as const, content: userMessage }];
+        const newMessages = [
+          ...messages,
+          { role: "user" as const, content: userMessage }
+        ];
+
+        if (insightExplanation) {
+          newMessages.push({
+            role: "system" as const,
+            content: `
+            This is the current feedback on the insightfulness of the user's answers in the conversation:
+            ${insightExplanation}.
+            Please continue the conversation with the user and aim to extract from them more insightful answers if possibles.
+            `
+          });
+        }
         setMessages(newMessages);
 
         const res = await fetch(`/api/surveys/${params.id}/responses`, {
@@ -493,7 +507,7 @@ export default function SurveyResponsePage() {
           </div>
           <div className="flex-1 flex flex-col h-[600px] border rounded-lg overflow-hidden">
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((message, index) => (
+              {messages.filter(message => message.role !== "system").map((message, index) => (
                 <div
                   key={index}
                   className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}

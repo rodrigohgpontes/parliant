@@ -7,12 +7,19 @@ import { db } from "@/lib/db/index";
 
 interface Survey {
     id: string;
-    title: string;
-    description?: string;
+    objective: string;
+    orientations?: string;
     created_at: Date;
     updated_at: Date;
-    user_id: string;
+    creator_id: string;
     is_active: boolean;
+    allow_anonymous: boolean;
+    is_one_per_respondent: boolean;
+    end_date?: Date;
+    max_questions?: number;
+    max_characters?: number;
+    survey_summary?: string;
+    survey_tags?: string[];
 }
 
 export async function revalidateSurveyPath(surveyId: number) {
@@ -59,7 +66,7 @@ export async function getAuthenticatedSurveys() {
 
     const result = await db`
     SELECT * FROM surveys 
-    WHERE user_id = ${userId}
+    WHERE creator_id = ${userId}
     ORDER BY created_at DESC
   `;
     return result;
@@ -86,7 +93,7 @@ export async function getAuthenticatedSurvey(id: string): Promise<Survey | null>
 
     const result = await db`
     SELECT * FROM surveys 
-    WHERE id = ${id} AND user_id = ${userId}
+    WHERE id = ${id} AND creator_id = ${userId}
   ` as unknown as Survey[];
 
     if (!result.length) {
@@ -95,12 +102,19 @@ export async function getAuthenticatedSurvey(id: string): Promise<Survey | null>
 
     return {
         id: result[0].id,
-        title: result[0].title,
-        description: result[0].description,
+        objective: result[0].objective,
+        orientations: result[0].orientations,
         created_at: new Date(result[0].created_at),
         updated_at: new Date(result[0].updated_at),
-        user_id: result[0].user_id,
-        is_active: result[0].is_active
+        creator_id: result[0].creator_id,
+        is_active: result[0].is_active,
+        allow_anonymous: result[0].allow_anonymous,
+        is_one_per_respondent: result[0].is_one_per_respondent,
+        end_date: result[0].end_date ? new Date(result[0].end_date) : undefined,
+        max_questions: result[0].max_questions,
+        max_characters: result[0].max_characters,
+        survey_summary: result[0].survey_summary,
+        survey_tags: result[0].survey_tags
     };
 }
 
@@ -130,7 +144,7 @@ export async function createAuthenticatedSurvey(data: FormData) {
     }
 
     await db`
-    INSERT INTO surveys (user_id, title, description)
+    INSERT INTO surveys (creator_id, objective, orientations)
     VALUES (${userId}, ${title}, ${description})
   `;
     await revalidateDashboard();
@@ -163,8 +177,8 @@ export async function updateAuthenticatedSurvey(id: string, data: FormData) {
 
     await db`
     UPDATE surveys 
-    SET title = ${title}, description = ${description}
-    WHERE id = ${id} AND user_id = ${userId}
+    SET objective = ${title}, orientations = ${description}
+    WHERE id = ${id} AND creator_id = ${userId}
   `;
     await revalidateSurveyAndDashboard(Number(id));
 }
@@ -190,7 +204,7 @@ export async function deleteAuthenticatedSurvey(id: string) {
 
     await db`
     DELETE FROM surveys 
-    WHERE id = ${id} AND user_id = ${userId}
+    WHERE id = ${id} AND creator_id = ${userId}
   `;
     await revalidateDashboard();
 } 

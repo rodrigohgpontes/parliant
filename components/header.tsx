@@ -17,9 +17,10 @@ export function Header({ showAuth = true }: HeaderProps) {
     const { user } = useUser();
     const showNavigation = pathname === "/";
     const isPublicSurvey = pathname.includes("/surveys/") && pathname.includes("/public");
+    const isSurveyResponse = pathname.includes("/surveys/") && !pathname.includes("/public");
 
-    // Skip auth checks for public survey pages
-    if (isPublicSurvey) {
+    // Skip auth checks for public survey pages and survey response pages
+    if (isPublicSurvey || isSurveyResponse) {
         return (
             <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
                 <div className="container flex h-16 items-center justify-between">
@@ -28,7 +29,7 @@ export function Header({ showAuth = true }: HeaderProps) {
                         <span className="text-xl font-bold" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Parliant.AI</span>
                     </Link>
                     <Link href="/" target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline" size="sm">
+                        <Button variant="secondary" size="sm" className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white hover:from-indigo-600 hover:to-purple-600">
                             Create Your Own AI Survey
                         </Button>
                     </Link>

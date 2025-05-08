@@ -489,140 +489,137 @@ export default function SurveyResponsePage() {
   }
 
   return (
-    <div className="container max-w-2xl py-12">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">{survey.title}</h1>
-          {survey.objective && (
-            <p className="mt-2 text-muted-foreground">{survey.objective}</p>
-          )}
-        </div>
-
-        <div className="flex gap-4">
-          <div className="flex items-center gap-4">
-            <Thermometer value={insightLevel} max={10} explanation={insightExplanation || undefined} />
-            {/* <div className="flex flex-col items-center gap-2">
-              <Mascot {...parlyMood} className="w-48 h-48" />
-            </div> */}
+    <div className="min-h-screen bg-[#fafafa] bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]">
+      <div className="container max-w-2xl py-6 sm:py-12 px-4 sm:px-6 font-[system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif]">
+        <div className="space-y-4 sm:space-y-6">
+          <div>
+            <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-foreground/90">{survey.title}</h1>
+            {survey.objective && (
+              <p className="mt-2 sm:mt-3 text-base sm:text-lg leading-relaxed">{survey.objective}</p>
+            )}
+            <p className="mt-2 text-sm text-primary">This survey uses an AI chat format to make the process more natural and engaging. Feel free to express yourself in your own voice and style - there's no need for formal language.</p>
           </div>
-          <div className="flex-1 flex flex-col h-[600px] border rounded-lg overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.filter(message => message.role !== "system").map((message, index) => (
-                <div
-                  key={index}
-                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                >
+
+          <div className="flex gap-4">
+            <div className="flex-1 flex flex-col h-[700px] sm:h-[700px] border rounded-2xl overflow-hidden bg-white">
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
+                {messages.filter(message => message.role !== "system").map((message, index) => (
                   <div
-                    className={`max-w-[80%] rounded-lg p-3 ${message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
-                      }`}
+                    key={index}
+                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    <div
+                      className={`max-w-[85%] sm:max-w-[80%] rounded-2xl p-3 sm:p-4 ${message.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                        }`}
+                    >
+                      <p className="whitespace-pre-wrap leading-relaxed text-[14px] sm:text-[15px]">{message.content}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-              {isLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-muted rounded-lg p-3">
-                    <LoadingDots />
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-muted rounded-2xl p-2 sm:p-3">
+                      <LoadingDots />
+                    </div>
                   </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
 
-            <div className="border-t p-4">
-              <form onSubmit={handleSubmit} className="flex gap-2">
-                <Textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="Type your response... (Ctrl+Enter or ⌘+Enter to send)"
-                  className="flex-1"
-                  disabled={isLoading}
-                />
-                <Button type="submit" disabled={isLoading}>
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
+              <div className="border-t p-3 sm:p-4 space-y-3 sm:space-y-4">
+                <form onSubmit={handleSubmit} className="flex gap-2">
+                  <Textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Type your response... (Ctrl+Enter or ⌘+Enter to send)"
+                    className="flex-1 text-[14px] sm:text-[15px] rounded-2xl resize-none"
+                    disabled={isLoading}
+                  />
+                  <Button type="submit" disabled={isLoading} className="rounded-full">
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </form>
+                <div className="flex items-center justify-center w-full">
+                  <div className="w-[85%] sm:w-3/4">
+                    <Thermometer value={insightLevel} max={10} explanation={insightExplanation || undefined} />
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button
+              onClick={handleFinalSubmit}
+              disabled={isSubmitting || messages.length < 2 || !responseId}
+              className="text-[14px] sm:text-[15px] font-medium rounded-full"
+            >
+              {isSubmitting ? "Submitting..." : "Submit Survey"}
+            </Button>
           </div>
         </div>
 
-        <div className="flex justify-end">
-          <Button
-            onClick={handleFinalSubmit}
-            disabled={isSubmitting || messages.length < 2 || !responseId}
-          >
-            {isSubmitting ? "Submitting..." : "Submit Survey"}
-          </Button>
-        </div>
-      </div>
+        <Dialog open={showRespondentModal} onOpenChange={setShowRespondentModal}>
+          <DialogContent className="rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-semibold tracking-tight">Tell us about yourself</DialogTitle>
+              <DialogDescription className="text-[15px] leading-relaxed">
+                {survey.allow_anonymous
+                  ? "This information is optional. You can skip this step if you prefer to remain anonymous."
+                  : "Please provide your information to continue with the survey."}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleRespondentSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" className="text-[15px] font-medium">Name</Label>
+                <Input
+                  id="name"
+                  value={respondentName}
+                  onChange={(e) => setRespondentName(e.target.value)}
+                  placeholder="Your name"
+                  required={!survey.allow_anonymous}
+                  className="text-[15px] rounded-xl"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-[15px] font-medium">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={respondentEmail}
+                  onChange={(e) => setRespondentEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  required={!survey.allow_anonymous}
+                  className="text-[15px] rounded-xl"
+                />
+              </div>
+              <DialogFooter className="gap-2">
+                {survey.allow_anonymous && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowRespondentModal(false);
+                        setInput("");
+                        handleRespondentSubmit(new Event("submit") as any);
+                      }}
+                      className="text-[15px] font-medium rounded-full"
+                    >
+                      Skip
+                    </Button>
 
-      <Dialog open={showRespondentModal} onOpenChange={setShowRespondentModal}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Tell us about yourself</DialogTitle>
-            <DialogDescription>
-              {survey.allow_anonymous
-                ? "This information is optional. You can skip this step if you prefer to remain anonymous."
-                : "Please provide your information to continue with the survey."}
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleRespondentSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={respondentName}
-                onChange={(e) => setRespondentName(e.target.value)}
-                placeholder="Your name"
-                required={!survey.allow_anonymous}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={respondentEmail}
-                onChange={(e) => setRespondentEmail(e.target.value)}
-                placeholder="your@email.com"
-                required={!survey.allow_anonymous}
-              />
-            </div>
-            <DialogFooter className="gap-2">
-              {survey.allow_anonymous && (
-                <>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setShowRespondentModal(false);
-                      handleRespondentSubmit(new Event("submit") as any);
-                    }}
-                  >
-                    Skip
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      setShowRespondentModal(false);
-                      setInput("");
-                      handleRespondentSubmit(new Event("submit") as any);
-                    }}
-                  >
-                    Dismiss
-                  </Button>
-                </>
-              )}
-              <Button type="submit">Continue</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+                  </>
+                )}
+                <Button type="submit" className="text-[15px] font-medium rounded-full">Continue</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }

@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function VerifyEmailPage() {
-    const { user, isLoading, error } = useUser();
+    const { user, isLoading, error, invalidate } = useUser();
     const router = useRouter();
     const [logoutUrl, setLogoutUrl] = useState<string>("/auth/logout");
     const [isRedirecting, setIsRedirecting] = useState(false);
@@ -22,8 +22,39 @@ export default function VerifyEmailPage() {
             return;
         }
 
+        // Check email verification status immediately when user data is available
+        if (user && !isLoading) {
+            console.log('Checking initial email verification status:', user.email_verified);
+            if (user.email_verified) {
+                console.log('Email already verified, redirecting to dashboard');
+                router.replace("/dashboard");
+                return;
+            }
+        }
+
         setLogoutUrl(`/auth/logout?returnTo=${encodeURIComponent(window.location.origin)}`);
-    }, [user, isLoading, error, router]);
+
+        // Set up polling to check email verification status
+        const checkEmailVerification = async () => {
+            try {
+                console.log('Polling: Checking email verification status...');
+                const updatedUser = await invalidate();
+                console.log('Polling: Updated user data:', updatedUser?.email_verified);
+                if (updatedUser?.email_verified) {
+                    console.log('Polling: Email verified, redirecting to dashboard');
+                    router.replace("/dashboard");
+                }
+            } catch (error) {
+                console.error('Error checking session:', error);
+            }
+        };
+
+        // Check immediately and then every 5 seconds
+        checkEmailVerification();
+        const intervalId = setInterval(checkEmailVerification, 5000);
+
+        return () => clearInterval(intervalId);
+    }, [user, isLoading, error, router, invalidate]);
 
     if (isLoading) {
         return (
@@ -66,6 +97,9 @@ export default function VerifyEmailPage() {
                     </div>
                     <p className="mt-4 text-muted-foreground">
                         Please check your inbox and click the verification link.
+                    </p>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        This page will automatically redirect you once your email is verified.
                     </p>
                 </CardContent>
                 <CardFooter className="flex justify-center">

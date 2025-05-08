@@ -24,61 +24,49 @@ export function Thermometer({ value, max, explanation, className }: ThermometerP
         <div className={cn("flex flex-col items-center gap-2", className)}>
             <div className="flex items-center gap-2">
                 <span className="text-sm font-medium">Insight Level</span>
-                <TooltipProvider delayDuration={0}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Info className={cn(
-                                "h-4 w-4 cursor-help",
-                                explanation ? "text-coral" : "text-muted-foreground"
-                            )} />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-[300px]">
-                            <div className="text-sm">
-                                {explanation ? (
-                                    <>
-                                        <p className="font-medium mb-2">Current Evaluation:</p>
-                                        <p className="text-coral">{explanation}</p>
-                                    </>
-                                ) : (
-                                    <>
-                                        <p>
-                                            The Insight Level measures how valuable and informative the conversation is for the survey objective.
-                                            It considers:
-                                        </p>
-                                        <ul className="mt-2 list-disc list-inside">
-                                            <li>Depth of responses</li>
-                                            <li>Relevance to the survey objective</li>
-                                            <li>Quality of insights provided</li>
-                                            <li>Engagement level</li>
-                                            <li>Clarity of communication</li>
-                                        </ul>
-                                        <p className="mt-2">
-                                            The level updates after each response, ranging from 0 (minimal insight) to 10 (exceptional insight).
-                                        </p>
-                                    </>
-                                )}
-                            </div>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
             </div>
-            <div className="relative w-4 h-48 bg-muted rounded-full overflow-hidden">
+            <div className="relative h-4 w-full bg-muted rounded-full">
                 <div
-                    className="absolute bottom-0 w-full transition-all duration-500"
+                    className="absolute left-0 h-full transition-all duration-500 rounded-full"
                     style={{
-                        height: `${percentage}%`,
+                        width: `${percentage}%`,
                         backgroundColor: `rgba(255, 127, 80, ${0.3 + colorIntensity * 0.7})`
                     }}
                 />
                 <div
-                    className="absolute bottom-0 w-full h-4 rounded-full"
+                    className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full text-white text-lg font-bold transition-all duration-500 z-10"
                     style={{
-                        backgroundColor: `rgba(255, 127, 80, ${0.3 + colorIntensity * 0.7})`
+                        left: `calc(${percentage}% - 16px)`,
+                        backgroundColor: `rgba(255, 127, 80, ${0.5 + colorIntensity * 0.5})`
                     }}
-                />
+                >
+                    {displayValue}
+                </div>
             </div>
-            <div className="text-sm font-medium">
-                {displayValue}
+            <div className="text-sm w-full text-left mt-4 text-primary">
+                {explanation ? (
+                    <>
+                        <p className="font-medium mb-2">Current Evaluation:</p>
+                        <p className="text-primary">{explanation}</p>
+                    </>
+                ) : (
+                    <>
+                        <p className="text-muted-foreground">
+                            The Insight Level measures how valuable and informative the conversation is for the survey objective.
+                            It considers:
+                        </p>
+                        <ul className="mt-2 list-disc list-inside text-muted-foreground">
+                            <li>Depth of responses</li>
+                            <li>Relevance to the survey objective</li>
+                            <li>Quality of insights provided</li>
+                            <li>Engagement level</li>
+                            <li>Clarity of communication</li>
+                        </ul>
+                        <p className="mt-2 text-muted-foreground">
+                            The level updates after each response, ranging from 0 (minimal insight) to 10 (exceptional insight).
+                        </p>
+                    </>
+                )}
             </div>
         </div>
     );

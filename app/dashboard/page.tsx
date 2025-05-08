@@ -3,7 +3,7 @@ import { SurveyCard } from "@/components/survey-card";
 import { getSurveysServerAction } from "@/lib/actions/survey-server-actions";
 import { getResponsesServer } from "@/lib/actions/server-data-actions";
 import Link from "next/link";
-import { Plus, BarChart, Users } from "lucide-react";
+import { Plus, BarChart, Users, Sparkles, MessageSquare, Brain, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityChart } from "@/components/activity-chart";
 
@@ -36,64 +36,99 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 mb-8">
-        <Card className="w-fit">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Survey Overview</CardTitle>
-            <BarChart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-6">
-              <div>
-                <div className="text-2xl font-bold text-primary">{activeSurveys}</div>
-                <p className="text-xs text-muted-foreground">
-                  Active surveys
-                </p>
+      {surveys.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2 mb-8">
+          <Card className="w-fit">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Survey Overview</CardTitle>
+              <BarChart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-6">
+                <div>
+                  <div className="text-2xl font-bold text-primary">{activeSurveys}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Active surveys
+                  </p>
+                </div>
+                <div className="h-8 w-px bg-border" />
+                <div>
+                  <div className="text-2xl font-bold">{totalSurveys}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Total surveys
+                  </p>
+                </div>
+                <div className="h-8 w-px bg-border" />
+                <div>
+                  <div className="text-2xl font-bold">{totalResponses}</div>
+                  <p className="text-xs text-muted-foreground">
+                    Total responses
+                  </p>
+                </div>
               </div>
-              <div className="h-8 w-px bg-border" />
-              <div>
-                <div className="text-2xl font-bold">{totalSurveys}</div>
-                <p className="text-xs text-muted-foreground">
-                  Total surveys
-                </p>
-              </div>
-              <div className="h-8 w-px bg-border" />
-              <div>
-                <div className="text-2xl font-bold">{totalResponses}</div>
-                <p className="text-xs text-muted-foreground">
-                  Total responses
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
-            <BarChart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <ActivityChart responses={responses} surveys={surveys} />
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
+              <BarChart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <ActivityChart responses={responses} surveys={surveys} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {surveys.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-lg">
-          <div className="text-center space-y-4">
+        <div className="flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-lg bg-primary/5">
+          <div className="text-center space-y-8 max-w-2xl">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10">
-              <Plus className="h-8 w-8 text-primary" />
+              <Sparkles className="h-8 w-8 text-primary" />
             </div>
-            <div>
-              <h2 className="text-xl font-medium text-gray-900">No surveys yet</h2>
-              <p className="text-muted-foreground mt-2">Create your first survey to start collecting insights</p>
+            <div className="space-y-4">
+              <h2 className="text-2xl font-semibold text-gray-900">Create Your First AI-Powered Survey</h2>
+              <p className="text-muted-foreground text-lg">Start collecting valuable insights with our conversational AI surveys</p>
             </div>
-            <Link href="/dashboard/surveys/new">
-              <Button size="lg">
-                <Plus className="mr-2 h-4 w-4" />
-                Create Your First Survey
-              </Button>
-            </Link>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+              <div className="flex items-start gap-3">
+                <div className="mt-1">
+                  <MessageSquare className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Natural Conversations</h3>
+                  <p className="text-sm text-muted-foreground">Engage respondents with dynamic, human-like conversations</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="mt-1">
+                  <Brain className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Smart Analysis</h3>
+                  <p className="text-sm text-muted-foreground">Get AI-powered insights and summaries of responses</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="mt-1">
+                  <Zap className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Quick Setup</h3>
+                  <p className="text-sm text-muted-foreground">Create and launch your survey in minutes</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <Link href="/dashboard/surveys/new">
+                <Button size="lg" className="h-12 px-8">
+                  <Plus className="mr-2 h-5 w-5" />
+                  Create Your First Survey
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       ) : (

@@ -6,6 +6,12 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
+// TODO: 
+// Add a rate limit to this route
+// Make sure assistant response is not being triggered twice
+// Make sure new assistant response is informed of insight explanation
+
+
 export async function POST(
     req: Request,
     { params }: { params: { id: string; responseId: string; }; }

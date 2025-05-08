@@ -6,10 +6,89 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createSurveyServerAction } from "@/lib/actions/survey-server-actions";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Wand2 } from "lucide-react";
 import Link from "next/link";
+import { useState } from "react";
+import { toast } from "sonner";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function CreateSurveyPage() {
+  const [objective, setObjective] = useState("");
+  const [isRephrasing, setIsRephrasing] = useState(false);
+  const [guidelines, setGuidelines] = useState("");
+  const [isImprovingGuidelines, setIsImprovingGuidelines] = useState(false);
+
+  const handleRephrase = async () => {
+    if (!objective.trim()) {
+      toast.error("Please enter a learning objective first");
+      return;
+    }
+
+    setIsRephrasing(true);
+    try {
+      const response = await fetch("/api/rephrase-objective", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ objective }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to rephrase objective");
+      }
+
+      const data = await response.json();
+      setObjective(data.rephrasedObjective);
+      toast.success("Learning objective rephrased successfully!");
+    } catch (error) {
+      toast.error("Failed to rephrase learning objective");
+      console.error(error);
+    } finally {
+      setIsRephrasing(false);
+    }
+  };
+
+  const handleImproveGuidelines = async () => {
+    if (!objective.trim()) {
+      toast.error("Please enter a learning objective first");
+      return;
+    }
+
+    setIsImprovingGuidelines(true);
+    try {
+      const response = await fetch("/api/improve-guidelines", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          objective,
+          guidelines: guidelines.trim(),
+          isNew: !guidelines.trim()
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to improve guidelines");
+      }
+
+      const data = await response.json();
+      setGuidelines(data.improvedGuidelines);
+      toast.success(guidelines.trim() ? "Guidelines improved successfully!" : "Guidelines generated successfully!");
+    } catch (error) {
+      toast.error("Failed to improve guidelines");
+      console.error(error);
+    } finally {
+      setIsImprovingGuidelines(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-2">
@@ -19,10 +98,7 @@ export default function CreateSurveyPage() {
             <span className="sr-only">Back</span>
           </Button>
         </Link>
-        <div>
-          <h1 className="text-3xl font-bold">Create New Survey</h1>
-          <p className="text-muted-foreground mt-1">Set up your survey details</p>
-        </div>
+        <h1 className="text-3xl font-bold">New Survey</h1>
       </div>
 
       <form action={createSurveyServerAction} className="space-y-6">
@@ -35,14 +111,43 @@ export default function CreateSurveyPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="objective">Learning Objective</Label>
-              <Input
-                id="objective"
-                name="objective"
-                placeholder="What do you want to learn from this survey?"
-                required
-                className="border-primary/50 bg-primary/5 focus:border-primary focus:ring-primary hover:border-primary text-xl h-16"
-              />
+              <Label htmlFor="title">Learning Objective</Label>
+              <div className="flex gap-2">
+                <Textarea
+                  id="title"
+                  name="title"
+                  placeholder="What do you want to learn from this survey?"
+                  required
+                  value={objective}
+                  onChange={(e) => setObjective(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                    }
+                  }}
+                  className="border-primary/50 bg-primary/5 focus:border-primary focus:ring-primary hover:border-primary text-xl min-h-[64px] resize-y"
+                />
+                <TooltipProvider>
+                  <Tooltip delayDuration={200}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant={objective.trim() ? "secondary" : "outline"}
+                        size="icon"
+                        onClick={handleRephrase}
+                        disabled={isRephrasing || !objective.trim()}
+                        className="h-16 w-16"
+                      >
+                        <Wand2 className={`h-5 w-5 ${isRephrasing ? "animate-spin" : ""}`} />
+                        <span className="sr-only">Let AI rephrase it</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Let AI improve your learning objective to make it more specific and engaging</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <p className="text-sm text-muted-foreground">
                 Tips for writing a good learning objective:
               </p>
@@ -65,13 +170,42 @@ export default function CreateSurveyPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="orientations">AI Assistant Guidelines</Label>
-              <Textarea
-                id="orientations"
-                name="orientations"
-                placeholder="Provide context and guidance for the AI assistant..."
-                className="min-h-[200px] border-primary/50 bg-primary/5 focus:border-primary focus:ring-primary hover:border-primary text-lg"
-              />
+              <Label htmlFor="description">AI Assistant Guidelines</Label>
+              <div className="flex gap-2">
+                <Textarea
+                  id="description"
+                  name="description"
+                  placeholder="Provide context and guidance for the AI assistant..."
+                  value={guidelines}
+                  onChange={(e) => setGuidelines(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                    }
+                  }}
+                  className="min-h-[200px] border-primary/50 bg-primary/5 focus:border-primary focus:ring-primary hover:border-primary text-lg"
+                />
+                <TooltipProvider>
+                  <Tooltip delayDuration={200}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant={objective.trim() ? "secondary" : "outline"}
+                        size="icon"
+                        onClick={handleImproveGuidelines}
+                        disabled={isImprovingGuidelines || !objective.trim()}
+                        className="h-[200px] w-16"
+                      >
+                        <Wand2 className={`h-5 w-5 ${isImprovingGuidelines ? "animate-spin" : ""}`} />
+                        <span className="sr-only">Let AI improve guidelines</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{guidelines.trim() ? "Let AI improve your guidelines" : "Let AI suggest guidelines"}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <p className="text-sm text-muted-foreground">
                 Tips for writing effective guidelines:
               </p>

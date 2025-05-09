@@ -29,13 +29,79 @@ export default function Home() {
                 </div>
               </div>
               <div className="mx-auto lg:ml-auto flex items-center justify-center">
-                <img
-                  alt="Parliant.AI conversation interface"
-                  className="aspect-video overflow-hidden rounded-xl object-cover object-center"
-                  height="550"
-                  src="/ai-survey-interface.png"
-                  width="650"
-                />
+                <div className="w-[650px] h-[550px] bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
+                  {/* Chat Header */}
+                  <div className="bg-primary/5 p-4 border-b">
+                    <h3 className="font-medium text-lg">Customer Feedback Survey</h3>
+                    <p className="text-sm text-muted-foreground">Understanding your experience with our product</p>
+                  </div>
+
+                  {/* Chat Messages */}
+                  <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                    {/* AI Initial Message */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-sm font-medium text-primary">AI</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="bg-muted rounded-lg p-3 max-w-[80%]">
+                          <p>Hi! I'd like to understand your experience with our product. What made you choose it?</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* User Response */}
+                    <div className="flex items-start gap-3 justify-end">
+                      <div className="flex-1">
+                        <div className="bg-primary text-primary-foreground rounded-lg p-3 max-w-[80%] ml-auto">
+                          <p>I was looking for something that could help me understand my customers better. The AI-powered approach seemed interesting.</p>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                        <span className="text-sm font-medium text-primary-foreground">U</span>
+                      </div>
+                    </div>
+
+                    {/* AI Follow-up */}
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-sm font-medium text-primary">AI</span>
+                      </div>
+                      <div className="flex-1">
+                        <div className="bg-muted rounded-lg p-3 max-w-[80%]">
+                          <p>That's great! Could you tell me more about what specific customer insights you were hoping to gain?</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* User Detailed Response */}
+                    <div className="flex items-start gap-3 justify-end">
+                      <div className="flex-1">
+                        <div className="bg-primary text-primary-foreground rounded-lg p-3 max-w-[80%] ml-auto">
+                          <p>I wanted to understand why customers were leaving our platform. Traditional surveys weren't giving us the depth we needed, and I thought an AI conversation might help get more honest, detailed feedback.</p>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                        <span className="text-sm font-medium text-primary-foreground">U</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Input Area */}
+                  <div className="p-4 border-t bg-muted/30">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 bg-background rounded-full px-4 py-2 text-sm">
+                        Type your message...
+                      </div>
+                      <button className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="m22 2-7 20-4-9-9-4Z" />
+                          <path d="M22 2 11 13" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -67,13 +133,42 @@ export default function Home() {
                 </Link>
               </div>
               <div className="mx-auto order-1 lg:order-2">
-                <img
-                  alt="AI conversation example"
-                  className="aspect-video overflow-hidden rounded-xl object-cover"
-                  height="400"
-                  src="/ai-customer-conversation.png"
-                  width="500"
-                />
+                <div className="flex flex-col lg:flex-row gap-6 items-center">
+
+                  <div className="border rounded-lg p-6 bg-[#1a1a2e] text-white w-full max-w-md">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">Insight Level</span>
+                      </div>
+                      <div className="relative h-4 w-full bg-white/10 rounded-full">
+                        <div
+                          className="absolute left-0 h-full transition-all duration-500 rounded-full"
+                          style={{
+                            width: "60%",
+                            backgroundColor: "rgba(255, 127, 80, 0.8)"
+                          }}
+                        />
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 rounded-full text-white text-lg font-bold transition-all duration-500 z-10"
+                          style={{
+                            left: "calc(60% - 16px)",
+                            backgroundColor: "rgba(255, 127, 80, 0.8)"
+                          }}
+                        >
+                          6
+                        </div>
+                      </div>
+                      <div className="text-sm w-full text-left mt-4">
+                        <p className="font-medium mb-2">Current Evaluation:</p>
+                        <p>
+                          Good responses with clear points, but could benefit from more specific examples and personal experiences.
+                          Consider elaborating on how these insights have impacted your decision-making process and what specific
+                          outcomes you've observed.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

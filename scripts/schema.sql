@@ -13,6 +13,18 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create subscriptions table
+CREATE TABLE IF NOT EXISTS subscriptions (
+    id uuid NOT NULL DEFAULT uuid_generate_v4(),
+    user_id text NOT NULL,
+    plan text NOT NULL DEFAULT 'free'::text,
+    status text NOT NULL DEFAULT 'active'::text,
+    created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE (user_id)
+);
+
 -- Create surveys table
 CREATE TABLE IF NOT EXISTS surveys (
     id uuid NOT NULL DEFAULT uuid_generate_v4(),

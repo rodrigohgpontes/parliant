@@ -30,7 +30,7 @@ export default async function DashboardPage() {
         </div>
         {surveys.length >= 3 && (
           <div className="text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-md border border-amber-200">
-            You've reached the limit of 3 surveys on the free plan. <Link href="/pricing" className="font-medium underline">Upgrade to Pro</Link> to create unlimited surveys.
+            You've reached the limit of 3 surveys on the free plan. <Link href="/subscription" className="font-medium underline">Upgrade to Pro</Link> to create unlimited surveys.
           </div>
         )}
         {surveys.length < 3 ? (

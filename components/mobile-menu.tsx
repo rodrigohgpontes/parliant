@@ -55,6 +55,11 @@ export function MobileMenu({ showAuth = true }: MobileMenuProps) {
                         Dashboard
                       </Button>
                     </Link>
+                    <Link href="/subscription" onClick={() => setOpen(false)}>
+                      <Button variant="outline" size="sm">
+                        Subscription
+                      </Button>
+                    </Link>
                     <Link href="/auth/logout" onClick={() => setOpen(false)}>
                       <Button variant="ghost" size="sm">
                         Log out

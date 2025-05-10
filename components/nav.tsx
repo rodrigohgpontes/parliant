@@ -18,6 +18,11 @@ export function Navigation() {
                             Dashboard
                         </Button>
                     </Link>
+                    <Link href="/subscription">
+                        <Button variant="outline" size="sm">
+                            Subscription
+                        </Button>
+                    </Link>
                     <Link href="/auth/logout" prefetch={false}>
                         <Button variant="ghost" size="sm">
                             Log out

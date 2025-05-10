@@ -1,27 +1,12 @@
 import { NextResponse } from 'next/server';
-import { auth0 } from '@/lib/auth0-client';
 import { db } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 
 export async function GET(request: NextRequest) {
     try {
-        const session = await auth0.getSession(request);
-        if (!session?.user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const userId = session.user.sub;
-
-        // Get current subscription status
-        const subscription = await db`
-      SELECT * FROM subscriptions 
-      WHERE user_id = ${userId}
-      ORDER BY created_at DESC
-      LIMIT 1
-    `;
-
+        // For now, just return the free plan
         return NextResponse.json({
-            subscription: subscription[0] || { plan: 'free' }
+            subscription: { plan: 'free' }
         });
     } catch (error) {
         console.error('Error fetching subscription:', error);
@@ -31,25 +16,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
     try {
-        const session = await auth0.getSession(request);
-        if (!session?.user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const userId = session.user.sub;
         const { plan } = await request.json();
 
-        // Update or create subscription
-        await db`
-      INSERT INTO subscriptions (user_id, plan, status)
-      VALUES (${userId}, ${plan}, 'active')
-      ON CONFLICT (user_id) 
-      DO UPDATE SET 
-        plan = ${plan},
-        status = 'active',
-        updated_at = NOW()
-    `;
-
+        // For now, just return success
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error updating subscription:', error);
@@ -59,20 +28,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
     try {
-        const session = await auth0.getSession(request);
-        if (!session?.user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const userId = session.user.sub;
-
-        // Cancel subscription
-        await db`
-      UPDATE subscriptions 
-      SET status = 'cancelled', updated_at = NOW()
-      WHERE user_id = ${userId}
-    `;
-
+        // For now, just return success
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error cancelling subscription:', error);

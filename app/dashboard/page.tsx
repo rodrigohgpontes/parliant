@@ -6,6 +6,15 @@ import Link from "next/link";
 import { Plus, BarChart, Users, Sparkles, MessageSquare, Brain, Zap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ActivityChart } from "@/components/activity-chart";
+import { getUserByAuth0Id } from "@/lib/actions/user-actions";
+import { getSession } from "@/lib/auth0";
+import { redirect } from "next/navigation";
+
+// TODO
+// - Make sure verify email page works (or is loaded after logout with a button to login)
+// - Make subscription page create a subscription record in the database (add will_cancel_at_period_end)
+// - Integrate with Stripe to handle payments
+// - Make sure production has all the env vars
 
 export default async function DashboardPage() {
   const surveys = await getSurveysServerAction();
@@ -21,6 +30,14 @@ export default async function DashboardPage() {
   // Flatten all responses for the chart
   const responses = allResponses.flat();
 
+  // Get user data
+  const session = await getSession();
+  const user = session?.user ? await getUserByAuth0Id(session.user.sub) : null;
+  console.log(user);
+  if (user?.deleted_at) {
+    redirect("/auth/logout");
+  }
+
   return (
     <div className="flex flex-col min-h-screen p-6">
       <div className="flex items-center justify-between mb-8">
@@ -28,12 +45,12 @@ export default async function DashboardPage() {
           <h1 className="text-3xl font-bold">Your Surveys</h1>
           <p className="text-muted-foreground mt-2">Manage and analyze your survey data</p>
         </div>
-        {surveys.length >= 3 && (
+        {user?.plan === "free" && surveys.length >= 3 && (
           <div className="text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-md border border-amber-200">
             You've reached the limit of 3 surveys on the free plan. <Link href="/subscription" className="font-medium underline">Upgrade to Pro</Link> to create unlimited surveys.
           </div>
         )}
-        {surveys.length < 3 ? (
+        {user?.plan === "pro" || user?.plan === "enterprise" || surveys.length < 3 ? (
           <Link href="/dashboard/surveys/new">
             <Button className="h-10">
               <Plus className="mr-2 h-4 w-4" />

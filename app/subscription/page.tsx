@@ -8,7 +8,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useUser } from '@auth0/nextjs-auth0';
 import { toast } from 'sonner';
-import { ChevronRight, Copy, Check } from 'lucide-react';
+import { ChevronRight, Copy, Check, AlertTriangle } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { redirect } from 'next/navigation';
 
 interface UsageStats {
     surveys: number;
@@ -89,6 +102,13 @@ export default function SubscriptionPage() {
     });
     const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteConfirmation, setDeleteConfirmation] = useState('');
+
+
+    if (user?.deleted_at) {
+        redirect("/auth/logout");
+    }
 
     useEffect(() => {
         if (user) {
@@ -165,6 +185,32 @@ export default function SubscriptionPage() {
             setTimeout(() => setCopied(false), 2000);
         } catch (error) {
             toast.error('Failed to copy email');
+        }
+    };
+
+    const handleDeleteAccount = async () => {
+        if (deleteConfirmation !== 'delete the account') {
+            toast.error('Please type the confirmation text exactly as shown');
+            return;
+        }
+
+        try {
+            setIsDeleting(true);
+            const response = await fetch('/api/account/delete', {
+                method: 'POST',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to delete account');
+            }
+
+            toast.success('Account deleted successfully');
+
+            // Log out the user
+            window.location.href = '/api/auth/logout?returnTo=/';
+        } catch (error) {
+            toast.error('Failed to delete account');
+            setIsDeleting(false);
         }
     };
 
@@ -319,6 +365,70 @@ export default function SubscriptionPage() {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            <div className="mt-8 border-t pt-8">
+                <Card className="border-destructive">
+                    <CardHeader>
+                        <CardTitle className="text-destructive flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5" />
+                            Danger Zone
+                        </CardTitle>
+                        <CardDescription>
+                            Once you delete your account, there is no going back. Please be certain.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground">
+                            This action will permanently delete your account and all associated data, including:
+                        </p>
+                        <ul className="list-disc list-inside mt-2 text-sm text-muted-foreground">
+                            <li>All your surveys and their configurations</li>
+                            <li>All responses and their analysis</li>
+                            <li>Your account settings and preferences</li>
+                            <li>All subscription data</li>
+                        </ul>
+                    </CardContent>
+                    <CardFooter>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" disabled={isDeleting}>
+                                    {isDeleting ? 'Deleting...' : 'Delete Account'}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete your account
+                                        and remove all your data from our servers.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <div className="py-4">
+                                    <p className="text-sm text-muted-foreground mb-2">
+                                        Please type <span className="font-mono">delete the account</span> to confirm:
+                                    </p>
+                                    <Input
+                                        value={deleteConfirmation}
+                                        onChange={(e) => setDeleteConfirmation(e.target.value)}
+                                        placeholder="Type to confirm"
+                                        className="font-mono"
+                                    />
+                                </div>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel onClick={() => setDeleteConfirmation('')}>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={handleDeleteAccount}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        disabled={deleteConfirmation !== 'delete the account'}
+                                    >
+                                        Yes, delete my account
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </CardFooter>
+                </Card>
+            </div>
         </div>
     );
 } 

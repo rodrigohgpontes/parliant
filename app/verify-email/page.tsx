@@ -38,6 +38,11 @@ export default function VerifyEmailPage() {
         const checkEmailVerification = async () => {
             try {
                 console.log('Polling: Checking email verification status...');
+                // Force a session refresh
+                const response = await fetch('/api/auth/refresh', { method: 'POST' });
+                if (!response.ok) {
+                    throw new Error('Failed to refresh session');
+                }
                 const updatedUser = await invalidate();
                 console.log('Polling: Updated user data:', updatedUser?.email_verified);
                 if (updatedUser?.email_verified) {

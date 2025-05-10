@@ -1,7 +1,6 @@
 "use server";
 
 import { db } from "@/lib/db/index";
-import { auth0 } from "@/lib/auth0";
 
 export async function createOrUpdateUser(auth0User: any) {
     // Check if user exists

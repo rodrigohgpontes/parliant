@@ -127,9 +127,9 @@ export async function createAuthenticatedSurvey(data: FormData) {
         throw new Error("Not authenticated");
     }
 
-    // First get the user's UUID from the users table
+    // First get the user's UUID and plan from the users table
     const userResult = await db`
-        SELECT id FROM users 
+        SELECT id, plan FROM users 
         WHERE auth0_id = ${user.sub}
     `;
 
@@ -138,6 +138,21 @@ export async function createAuthenticatedSurvey(data: FormData) {
     }
 
     const userId = userResult[0].id;
+    const userPlan = userResult[0].plan;
+
+    // If user is on free plan, check survey count
+    if (userPlan === 'free') {
+        const surveyCount = await db`
+            SELECT COUNT(*) as count FROM surveys 
+            WHERE creator_id = ${userId}
+            AND deleted_at IS NULL
+        `;
+
+        if (surveyCount[0].count >= 3) {
+            throw new Error("Free plan users can only create up to 3 surveys. Please upgrade to create more surveys.");
+        }
+    }
+
     const title = data.get("title") as string;
     const description = data.get("description") as string;
     const allowAnonymous = data.get("allow_anonymous") === "on";

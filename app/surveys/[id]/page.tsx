@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
-import { Send, Shuffle } from "lucide-react";
+import { Send, Shuffle, Mic } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -20,6 +20,7 @@ import { Thermometer } from "@/components/thermometer";
 import { Parly } from "@/components/parly";
 import Mascot from '@/app/components/Mascot';
 import { MascotColor, MascotEnergy, MascotEyes, MascotMouth, MascotEmote } from '@/app/lib/mascot-constants';
+import { AudioRecorder } from "@/app/components/AudioRecorder";
 
 interface Survey {
   id: string;
@@ -137,6 +138,7 @@ export default function SurveyResponsePage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [randomMood, setRandomMood] = useState(getRandomParlyMood());
   const [parlyMood, setParlyMood] = useState(getParlyMood(insightLevel, insightExplanation));
+  const [showAudioRecorder, setShowAudioRecorder] = useState(false);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -434,6 +436,11 @@ export default function SurveyResponsePage() {
     setRandomMood(getRandomParlyMood());
   };
 
+  const handleTranscriptionComplete = (text: string) => {
+    setInput(text);
+    setShowAudioRecorder(false);
+  };
+
   if (isSubmitted) {
     return (
       <div className="container max-w-2xl py-12">
@@ -501,18 +508,41 @@ export default function SurveyResponsePage() {
               </div>
 
               <div className="border-t p-3 sm:p-4 space-y-3 sm:space-y-4">
-                <form onSubmit={handleSubmit} className="flex gap-2">
+                <form onSubmit={handleSubmit} className="space-y-3">
                   <Textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Type your response... (Ctrl+Enter or ⌘+Enter to send)"
-                    className="flex-1 text-[14px] sm:text-[15px] rounded-2xl resize-none"
+                    className="w-full text-[14px] sm:text-[15px] rounded-2xl resize-none min-h-[120px]"
+                    rows={5}
                     disabled={isLoading}
                   />
-                  <Button type="submit" disabled={isLoading} className="rounded-full">
-                    <Send className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      {!showAudioRecorder ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="rounded-full"
+                          onClick={() => setShowAudioRecorder(true)}
+                          disabled={isLoading}
+                        >
+                          <Mic className="h-4 w-4 mr-2" />
+                          Answer with Audio
+                        </Button>
+                      ) : (
+                        <AudioRecorder
+                          onTranscriptionComplete={handleTranscriptionComplete}
+                          onCancel={() => setShowAudioRecorder(false)}
+                        />
+                      )}
+                    </div>
+                    <Button type="submit" disabled={isLoading} className="rounded-full">
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </form>
                 <div className="flex items-center justify-center w-full">
                   <div className="w-[85%] sm:w-3/4">

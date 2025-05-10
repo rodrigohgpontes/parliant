@@ -28,12 +28,24 @@ export default async function DashboardPage() {
           <h1 className="text-3xl font-bold">Your Surveys</h1>
           <p className="text-muted-foreground mt-2">Manage and analyze your survey data</p>
         </div>
-        <Link href="/dashboard/surveys/new">
-          <Button className="h-10">
+        {surveys.length >= 3 && (
+          <div className="text-sm text-amber-600 bg-amber-50 px-4 py-2 rounded-md border border-amber-200">
+            You've reached the limit of 3 surveys on the free plan. <Link href="/pricing" className="font-medium underline">Upgrade to Pro</Link> to create unlimited surveys.
+          </div>
+        )}
+        {surveys.length < 3 ? (
+          <Link href="/dashboard/surveys/new">
+            <Button className="h-10">
+              <Plus className="mr-2 h-4 w-4" />
+              Create Survey
+            </Button>
+          </Link>
+        ) : (
+          <Button className="h-10" disabled>
             <Plus className="mr-2 h-4 w-4" />
             Create Survey
           </Button>
-        </Link>
+        )}
       </div>
 
       {surveys.length > 0 && (

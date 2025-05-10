@@ -87,25 +87,25 @@ export function ActivityChart({ responses, surveys }: ActivityChartProps) {
                     type="single"
                     value={daysToShow.toString()}
                     onValueChange={(value) => setDaysToShow(value === "7" ? 7 : 30)}
-                    className="bg-muted p-1 rounded-lg"
+                    className="bg-muted p-1 rounded-lg text-xs"
                 >
                     <ToggleGroupItem
                         value="7"
                         className="data-[state=on]:bg-background data-[state=on]:text-foreground"
                     >
-                        <CalendarDays className="h-4 w-4 mr-2" />
+                        <CalendarDays className="h-3 w-3 mr-1" />
                         7 days
                     </ToggleGroupItem>
                     <ToggleGroupItem
                         value="30"
                         className="data-[state=on]:bg-background data-[state=on]:text-foreground"
                     >
-                        <CalendarDays className="h-4 w-4 mr-2" />
+                        <CalendarDays className="h-3 w-3 mr-1" />
                         30 days
                     </ToggleGroupItem>
                 </ToggleGroup>
             </div>
-            <div className="h-[300px]">
+            <div className="h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" />
@@ -115,8 +115,9 @@ export function ActivityChart({ responses, surveys }: ActivityChartProps) {
                                 const d = new Date(date);
                                 return `${d.getMonth() + 1}/${d.getDate()}`;
                             }}
+                            tick={{ fontSize: 11 }}
                         />
-                        <YAxis />
+                        <YAxis tick={{ fontSize: 11 }} />
                         <Tooltip
                             labelFormatter={(date) => {
                                 const d = new Date(date);
@@ -126,6 +127,7 @@ export function ActivityChart({ responses, surveys }: ActivityChartProps) {
                                     day: 'numeric'
                                 });
                             }}
+                            contentStyle={{ fontSize: 11 }}
                         />
                         {surveys.map(survey => (
                             <Bar

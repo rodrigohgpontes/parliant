@@ -67,6 +67,7 @@ export async function getAuthenticatedSurveys() {
     const result = await db`
     SELECT * FROM surveys 
     WHERE creator_id = ${userId}
+    AND (deleted_at IS NULL)
     ORDER BY created_at DESC
   `;
     return result;
@@ -94,6 +95,7 @@ export async function getAuthenticatedSurvey(id: string): Promise<Survey | null>
     const result = await db`
     SELECT * FROM surveys 
     WHERE id = ${id} AND creator_id = ${userId}
+    AND (deleted_at IS NULL)
   ` as unknown as Survey[];
 
     if (!result.length) {
@@ -138,14 +140,15 @@ export async function createAuthenticatedSurvey(data: FormData) {
     const userId = userResult[0].id;
     const title = data.get("title") as string;
     const description = data.get("description") as string;
+    const allowAnonymous = data.get("allow_anonymous") === "on";
 
     if (!title) {
         throw new Error("Title is required");
     }
 
     await db`
-    INSERT INTO surveys (creator_id, objective, orientations)
-    VALUES (${userId}, ${title}, ${description})
+    INSERT INTO surveys (creator_id, objective, orientations, allow_anonymous)
+    VALUES (${userId}, ${title}, ${description}, ${allowAnonymous})
   `;
     await revalidateDashboard();
 }
@@ -201,10 +204,20 @@ export async function deleteAuthenticatedSurvey(id: string) {
     }
 
     const userId = userResult[0].id;
+    const now = new Date();
+
+    // Soft delete the survey and its responses
+    await db`
+        UPDATE surveys 
+        SET deleted_at = ${now}
+        WHERE id = ${id} AND creator_id = ${userId}
+    `;
 
     await db`
-    DELETE FROM surveys 
-    WHERE id = ${id} AND creator_id = ${userId}
-  `;
+        UPDATE responses 
+        SET deleted_at = ${now}
+        WHERE survey_id = ${id}
+    `;
+
     await revalidateDashboard();
 } 

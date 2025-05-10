@@ -15,7 +15,7 @@ export async function generateSummary(conversation: any[]): Promise<GenerateSumm
         const messages = [
             {
                 role: "system" as const,
-                content: "You are a helpful assistant that summarizes conversations. Provide a concise summary of the key points discussed."
+                content: "You are a helpful assistant that summarizes conversations. Provide a concise summary of the key points discussed. Focus on summarizing the user messages, not the assistant messages."
             },
             {
                 role: "user" as const,
@@ -51,14 +51,12 @@ export async function generateSurveySummary(objective: string, orientations?: st
             {
                 role: "user" as const,
                 content: `Please create a comprehensive summary for this survey based on the following information:
-
-Survey Objective: ${objective}
-${orientations ? `Orientations: ${orientations}` : ''}
-
-Response Summaries:
-${responseSummaries.map((summary, index) => `Response ${index + 1}:\n${summary}`).join('\n\n')}
-
-Please provide a synthesis of the key insights and patterns from these responses.`
+                Survey Objective: ${objective}
+                ${orientations ? `Orientations: ${orientations}` : ''}
+                Response Summaries:
+                ${responseSummaries.map((summary, index) => `Response ${index + 1}:\n${summary}`).join('\n\n')}
+                Please provide a synthesis of the key insights and patterns from these responses.
+                `
             }
         ];
 

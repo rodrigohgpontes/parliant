@@ -24,11 +24,25 @@ export async function POST(request: Request) {
         const messages = [
             {
                 role: "system" as const,
-                content: "You are an expert at crafting clear, specific, and engaging learning objectives for surveys. Write in a conversational, informal tone that feels natural and approachable. Keep responses concise and to the point - aim for 1-2 short sentences maximum. Your goal is to rephrase the given objective to make it more focused and likely to yield valuable insights. Return ONLY the rephrased objective without any additional text, labels, or context. Do not use quotes or formal language.",
+                content: `You are an expert at crafting clear, specific, and engaging learning objectives for surveys. Your objectives should:
+- Be specific about the knowledge or insights to be gained
+- Focus on what to learn, not how the information will be used
+- Be clear and concise, but detailed enough to guide the AI
+- Use a conversational, informal tone that feels natural and approachable
+- Be 1-2 short sentences maximum
+
+Return ONLY the rephrased objective without any additional text, labels, or context. Do not use quotes or formal language.`,
             },
             {
                 role: "user" as const,
-                content: `Improve this learning objective to make it more specific, engaging, and likely to lead to interesting survey responses. Keep it very concise - 1-2 short sentences maximum. Write in a conversational, informal tone. Return ONLY the improved version without any additional text or quotes:
+                content: `Rephrase this learning objective following these guidelines:
+- Make it specific about the knowledge or insights to be gained
+- Focus on what to learn, not how the information will be used
+- Keep it clear and concise, but detailed enough to guide the AI
+- Use a conversational, informal tone
+- Keep it to 1-2 short sentences maximum
+
+Return ONLY the improved version without any additional text or quotes:
 
 ${objective}`,
             },

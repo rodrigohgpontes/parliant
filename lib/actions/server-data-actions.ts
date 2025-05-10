@@ -68,6 +68,7 @@ export async function getSurveysServer(): Promise<Survey[]> {
     const result = await db`
         SELECT * FROM surveys 
         WHERE creator_id = ${userId}
+        AND deleted_at IS NULL
         ORDER BY created_at DESC
     ` as QueryResult<Survey>;
 

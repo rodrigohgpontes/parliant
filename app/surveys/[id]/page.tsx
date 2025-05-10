@@ -124,6 +124,7 @@ export default function SurveyResponsePage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [showRespondentModal, setShowRespondentModal] = useState(false);
@@ -161,6 +162,7 @@ export default function SurveyResponsePage() {
                 content: data.first_question,
               },
             ]);
+            setInitialLoading(false);
           } else {
             const aiService = await fetch(`/api/surveys/${params.id}/chat`, {
               method: "POST",
@@ -185,10 +187,12 @@ export default function SurveyResponsePage() {
                 },
               ]);
             }
+            setInitialLoading(false);
           }
         }
       } catch (error) {
         console.error("Error fetching survey:", error);
+        setInitialLoading(false);
       }
     };
 
@@ -518,7 +522,7 @@ export default function SurveyResponsePage() {
                     </div>
                   </div>
                 ))}
-                {isLoading && (
+                {(isLoading || initialLoading) && (
                   <div className="flex justify-start">
                     <div className="bg-muted rounded-2xl p-2 sm:p-3">
                       <LoadingDots />
@@ -562,8 +566,21 @@ export default function SurveyResponsePage() {
           </div>
         </div>
 
-        <Dialog open={showRespondentModal} onOpenChange={setShowRespondentModal}>
-          <DialogContent className="rounded-2xl">
+        <Dialog
+          open={showRespondentModal}
+          onOpenChange={(open) => {
+            // Only allow closing if anonymous answers are allowed or if we're opening the modal
+            if (survey.allow_anonymous || open) {
+              setShowRespondentModal(open);
+            }
+          }}
+        >
+          <DialogContent className="rounded-2xl" onInteractOutside={(e) => {
+            // Prevent closing via clicking outside if anonymous answers are not allowed
+            if (!survey.allow_anonymous) {
+              e.preventDefault();
+            }
+          }}>
             <DialogHeader>
               <DialogTitle className="text-2xl font-semibold tracking-tight">Tell us about yourself</DialogTitle>
               <DialogDescription className="text-[15px] leading-relaxed">
@@ -598,23 +615,26 @@ export default function SurveyResponsePage() {
               </div>
               <DialogFooter className="gap-2">
                 {survey.allow_anonymous && (
-                  <>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowRespondentModal(false);
-                        setInput("");
-                        handleRespondentSubmit(new Event("submit") as any);
-                      }}
-                      className="text-[15px] font-medium rounded-full"
-                    >
-                      Skip
-                    </Button>
-
-                  </>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setShowRespondentModal(false);
+                      setInput("");
+                      handleRespondentSubmit(new Event("submit") as any);
+                    }}
+                    className="text-[15px] font-medium rounded-full"
+                  >
+                    Skip
+                  </Button>
                 )}
-                <Button type="submit" className="text-[15px] font-medium rounded-full">Continue</Button>
+                <Button
+                  type="submit"
+                  className="text-[15px] font-medium rounded-full"
+                  disabled={!survey.allow_anonymous && (!respondentName.trim() || !respondentEmail.trim())}
+                >
+                  Continue
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>

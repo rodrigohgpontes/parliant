@@ -9,6 +9,17 @@ import { getColorFromId } from "./activity-chart";
 import { Survey } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import { Users, CheckCircle, Clock } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface SurveyCardProps {
   survey: Survey;
@@ -28,7 +39,7 @@ export function SurveyCard({ survey, metrics }: SurveyCardProps) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
+        <CardTitle className="text-base font-medium flex items-center gap-2">
           <div
             className="w-3 h-3 rounded-sm"
             style={{ backgroundColor: getColorFromId(survey.id) }}
@@ -37,10 +48,7 @@ export function SurveyCard({ survey, metrics }: SurveyCardProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">
-          {survey.orientations || "No description provided"}
-        </div>
-        <div className="flex items-center gap-2 mt-2">
+        <div className="flex items-center gap-2">
           <Badge variant={survey.is_active ? "default" : "secondary"}>
             {survey.is_active ? "Active" : "Inactive"}
           </Badge>
@@ -79,9 +87,25 @@ export function SurveyCard({ survey, metrics }: SurveyCardProps) {
         <Link href={`/dashboard/surveys/${survey.id}`}>
           <Button variant="outline">View Details</Button>
         </Link>
-        <Button variant="destructive" onClick={handleDelete}>
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure you want to delete this survey?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action will delete the survey and all its responses. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardFooter>
     </Card>
   );

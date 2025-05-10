@@ -39,11 +39,11 @@ export default async function DashboardPage() {
       {surveys.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2 mb-8">
           <Card className="w-fit">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
               <CardTitle className="text-sm font-medium">Survey Overview</CardTitle>
               <BarChart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-2">
               <div className="flex items-center gap-6">
                 <div>
                   <div className="text-2xl font-bold text-primary">{activeSurveys}</div>
@@ -69,11 +69,11 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1">
               <CardTitle className="text-sm font-medium">Recent Activity</CardTitle>
               <BarChart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-2">
               <ActivityChart responses={responses} surveys={surveys} />
             </CardContent>
           </Card>

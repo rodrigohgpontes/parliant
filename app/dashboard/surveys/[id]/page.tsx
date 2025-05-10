@@ -178,14 +178,12 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
 
                   // Get the responses from the database again to ensure we have the latest data
                   const currentResponses = await getResponsesServer(survey.id);
-                  console.log('>> currentResponses ', currentResponses);
 
                   // Find completed responses without summaries
                   const responsesToProcess = currentResponses.filter(r =>
                     r.completed_at && // Only completed responses
                     !r.summary // Only those without a summary
                   );
-                  console.log('>> responsesToProcess ', responsesToProcess);
 
                   // Generate summaries for each response
                   for (const response of responsesToProcess) {

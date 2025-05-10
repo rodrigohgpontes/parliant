@@ -24,13 +24,47 @@ export async function POST(request: Request) {
         const messages = [
             {
                 role: "system" as const,
-                content: "You are an expert at creating clear and concise guidelines for AI assistants conducting surveys. Focus on making the guidelines actionable and easy to follow."
+                content: `You are an expert at creating clear and concise guidelines for AI assistants conducting surveys. Your guidelines should:
+- Describe the target audience and their context
+- Specify the type of information to collect
+- Include specific topics or areas to explore
+- Set expectations for the conversation style and depth
+- Be actionable and easy to follow
+- Use a clear, professional tone
+- Format as simple bullet points using dashes
+
+Focus on making the guidelines practical and effective for gathering meaningful insights.`
             },
             {
                 role: "user" as const,
                 content: guidelines.trim()
-                    ? `Improve these guidelines for an AI assistant conducting a survey about: "${objective}"\n\nCurrent guidelines:\n${guidelines}\n\nMake them more concise and format them as simple bullet points using dashes. No markdown or fancy titles.`
-                    : `Create clear and concise guidelines for an AI assistant conducting a survey about: "${objective}"\n\nFormat them as simple bullet points using dashes. No markdown or fancy titles.`
+                    ? `Improve these guidelines for an AI assistant conducting a survey about: "${objective}"
+
+Current guidelines:
+${guidelines}
+
+Follow these guidelines:
+- Describe the target audience and their context
+- Specify the type of information to collect
+- Include specific topics or areas to explore
+- Set expectations for the conversation style and depth
+- Make them actionable and easy to follow
+- Use a clear, professional tone
+- Format as simple bullet points using dashes
+
+Return ONLY the improved guidelines without any additional text or formatting.`
+                    : `Create guidelines for an AI assistant conducting a survey about: "${objective}"
+
+Follow these guidelines:
+- Describe the target audience and their context
+- Specify the type of information to collect
+- Include specific topics or areas to explore
+- Set expectations for the conversation style and depth
+- Make them actionable and easy to follow
+- Use a clear, professional tone
+- Format as simple bullet points using dashes
+
+Return ONLY the guidelines without any additional text or formatting.`
             }
         ];
 

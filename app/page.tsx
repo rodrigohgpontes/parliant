@@ -28,73 +28,73 @@ export default function Home() {
                   </Link>
                 </div>
               </div>
-              <div className="mx-auto lg:ml-auto flex items-center justify-center">
-                <div className="w-[650px] h-[550px] bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
+              <div className="mx-auto lg:ml-auto flex items-center justify-center w-full pointer-events-none">
+                <div className="w-full max-w-[650px] h-[550px] bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
                   {/* Chat Header */}
-                  <div className="bg-primary/5 p-4 border-b">
-                    <h3 className="font-medium text-lg">Customer Feedback Survey</h3>
-                    <p className="text-sm text-muted-foreground">Understanding your experience with our product</p>
+                  <div className="bg-primary/5 p-3 sm:p-4 border-b">
+                    <h3 className="font-medium text-base sm:text-lg">Customer Feedback Survey</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">Understanding your experience with our product</p>
                   </div>
 
                   {/* Chat Messages */}
-                  <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+                  <div className="flex-1 p-3 sm:p-4 space-y-3 sm:space-y-4 overflow-y-auto">
                     {/* AI Initial Message */}
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary">AI</span>
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="text-xs sm:text-sm font-medium text-primary">AI</span>
                       </div>
                       <div className="flex-1">
-                        <div className="bg-muted rounded-lg p-3 max-w-[80%]">
-                          <p>Hi! I'd like to understand your experience with our product. What made you choose it?</p>
+                        <div className="bg-muted rounded-lg p-2 sm:p-3 max-w-[85%] sm:max-w-[80%]">
+                          <p className="text-sm sm:text-base">Hi! I'd like to understand your experience with our product. What made you choose it?</p>
                         </div>
                       </div>
                     </div>
 
                     {/* User Response */}
-                    <div className="flex items-start gap-3 justify-end">
+                    <div className="flex items-start gap-2 sm:gap-3 justify-end">
                       <div className="flex-1">
-                        <div className="bg-primary text-primary-foreground rounded-lg p-3 max-w-[80%] ml-auto">
-                          <p>I was looking for something that could help me understand my customers better. The AI-powered approach seemed interesting.</p>
+                        <div className="bg-primary text-primary-foreground rounded-lg p-2 sm:p-3 max-w-[85%] sm:max-w-[80%] ml-auto">
+                          <p className="text-sm sm:text-base">I was looking for something that could help me understand my customers better. The AI-powered approach seemed interesting.</p>
                         </div>
                       </div>
-                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary-foreground">U</span>
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+                        <span className="text-xs sm:text-sm font-medium text-primary-foreground">U</span>
                       </div>
                     </div>
 
                     {/* AI Follow-up */}
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary">AI</span>
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <span className="text-xs sm:text-sm font-medium text-primary">AI</span>
                       </div>
                       <div className="flex-1">
-                        <div className="bg-muted rounded-lg p-3 max-w-[80%]">
-                          <p>That's great! Could you tell me more about what specific customer insights you were hoping to gain?</p>
+                        <div className="bg-muted rounded-lg p-2 sm:p-3 max-w-[85%] sm:max-w-[80%]">
+                          <p className="text-sm sm:text-base">That's great! Could you tell me more about what specific customer insights you were hoping to gain?</p>
                         </div>
                       </div>
                     </div>
 
                     {/* User Detailed Response */}
-                    <div className="flex items-start gap-3 justify-end">
+                    <div className="flex items-start gap-2 sm:gap-3 justify-end">
                       <div className="flex-1">
-                        <div className="bg-primary text-primary-foreground rounded-lg p-3 max-w-[80%] ml-auto">
-                          <p>I wanted to understand why customers were leaving our platform. Traditional surveys weren't giving us the depth we needed, and I thought an AI conversation might help get more honest, detailed feedback.</p>
+                        <div className="bg-primary text-primary-foreground rounded-lg p-2 sm:p-3 max-w-[85%] sm:max-w-[80%] ml-auto">
+                          <p className="text-sm sm:text-base">I wanted to understand why customers were leaving our platform. Traditional surveys weren't giving us the depth we needed, and I thought an AI conversation might help get more honest, detailed feedback.</p>
                         </div>
                       </div>
-                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary-foreground">U</span>
+                      <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary flex items-center justify-center shrink-0">
+                        <span className="text-xs sm:text-sm font-medium text-primary-foreground">U</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Input Area */}
-                  <div className="p-4 border-t bg-muted/30">
+                  <div className="p-3 sm:p-4 border-t bg-muted/30">
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 bg-background rounded-full px-4 py-2 text-sm">
+                      <div className="flex-1 bg-background rounded-full px-3 sm:px-4 py-2 text-xs sm:text-sm">
                         Type your message...
                       </div>
-                      <button className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <button className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="sm:w-4 sm:h-4">
                           <path d="m22 2-7 20-4-9-9-4Z" />
                           <path d="M22 2 11 13" />
                         </svg>
@@ -135,7 +135,7 @@ export default function Home() {
               <div className="mx-auto order-1 lg:order-2">
                 <div className="flex flex-col lg:flex-row gap-6 items-center">
 
-                  <div className="border rounded-lg p-6 bg-[#1a1a2e] text-white w-full max-w-md">
+                  <div className="border rounded-lg p-6 bg-[#1a1a2e] text-white w-full max-w-md pointer-events-none">
                     <div className="flex flex-col items-center gap-2">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">Insight Level</span>
@@ -273,14 +273,6 @@ export default function Home() {
                     <ChevronRight className="mr-2 h-4 w-4 text-primary" />
                     <span>1,000 responses per month</span>
                   </li>
-                  <li className="flex items-center">
-                    <ChevronRight className="mr-2 h-4 w-4 text-primary" />
-                    <span>Advanced analytics</span>
-                  </li>
-                  <li className="flex items-center">
-                    <ChevronRight className="mr-2 h-4 w-4 text-primary" />
-                    <span>Custom branding</span>
-                  </li>
                 </ul>
                 <Link href="/signup">
                   <Button className="w-full">Get started</Button>
@@ -302,11 +294,7 @@ export default function Home() {
                   </li>
                   <li className="flex items-center">
                     <ChevronRight className="mr-2 h-4 w-4 text-primary" />
-                    <span>Custom AI training</span>
-                  </li>
-                  <li className="flex items-center">
-                    <ChevronRight className="mr-2 h-4 w-4 text-primary" />
-                    <span>API access</span>
+                    <span>Custom branding</span>
                   </li>
                 </ul>
                 <Button className="w-full" variant="outline">

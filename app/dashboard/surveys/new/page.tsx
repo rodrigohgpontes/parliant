@@ -16,12 +16,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Switch } from "@/components/ui/switch";
 
 export default function CreateSurveyPage() {
   const [objective, setObjective] = useState("");
   const [isRephrasing, setIsRephrasing] = useState(false);
   const [guidelines, setGuidelines] = useState("");
   const [isImprovingGuidelines, setIsImprovingGuidelines] = useState(false);
+  const [allowAnonymous, setAllowAnonymous] = useState(true);
 
   const handleRephrase = async () => {
     if (!objective.trim()) {
@@ -216,6 +218,31 @@ export default function CreateSurveyPage() {
                 <li>Set expectations for the conversation style and depth</li>
                 <li>Example: "Focus on understanding daily routines, challenges, and coping strategies. Ask follow-up questions to get specific examples and details."</li>
               </ul>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Survey Settings</CardTitle>
+            <CardDescription>
+              Configure additional settings for your survey.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="allow-anonymous">Allow Anonymous Responses</Label>
+                <p className="text-sm text-muted-foreground">
+                  Let respondents complete the survey without providing their identity
+                </p>
+              </div>
+              <Switch
+                id="allow-anonymous"
+                checked={allowAnonymous}
+                onCheckedChange={setAllowAnonymous}
+                name="allow_anonymous"
+              />
             </div>
           </CardContent>
         </Card>

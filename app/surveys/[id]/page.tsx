@@ -392,38 +392,6 @@ export default function SurveyResponsePage() {
       }
 
       setShowRespondentModal(false);
-
-      // Get AI response for the first message
-      const aiRes = await fetch(`/api/surveys/${params.id}/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          messages: messages,
-          survey: {
-            objective: survey?.objective,
-            orientations: survey?.orientations,
-          },
-        }),
-      });
-
-      if (aiRes.ok) {
-        const data = await aiRes.json();
-        const newMessages = [...messages, { role: "assistant" as const, content: data.content }];
-        setMessages(newMessages);
-
-        // Update the response in the database
-        await fetch(`/api/surveys/${params.id}/responses/${responseId}`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            conversation: newMessages,
-          }),
-        });
-      }
     } catch (error) {
       console.error("Error updating respondent info:", error);
     } finally {

@@ -5,8 +5,8 @@ import { ExportPDFButton } from "@/components/export-pdf-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSurveyServer } from "@/lib/actions/server-data-actions";
-import { getResponsesServer, updateResponseSummary, updateSurveySummary, toggleSurveyStatus } from "@/lib/actions/server-data-actions";
-import { ArrowLeft, BarChart, Users, Clock, Activity, Sparkles, Copy } from "lucide-react";
+import { getResponsesServer, updateResponseSummary, updateSurveySummary, toggleSurveyStatus, updateSurveyGuidelines } from "@/lib/actions/server-data-actions";
+import { ArrowLeft, BarChart, Users, Clock, Activity, Sparkles, Copy, Pencil, X, Check } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -25,6 +25,9 @@ import { generateSummary } from "@/lib/actions/ai-actions";
 import { revalidatePath } from "next/cache";
 import { Input } from "@/components/ui/input";
 import { CopyButton } from "@/components/copy-button";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Textarea } from "@/components/ui/textarea";
+import { EditableGuidelines } from "@/components/editable-guidelines";
 
 interface PageProps {
   params: Promise<{
@@ -61,6 +64,26 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
 
       <Card>
         <CardHeader>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="guidelines" className="border-none">
+              <AccordionTrigger className="text-lg font-semibold hover:no-underline">Assistant Guidelines</AccordionTrigger>
+              <AccordionContent>
+                <EditableGuidelines
+                  guidelines={survey.orientations || null}
+                  onSave={async (guidelines) => {
+                    "use server";
+                    await updateSurveyGuidelines(survey.id, guidelines);
+                    revalidatePath(`/dashboard/surveys/${survey.id}`);
+                  }}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </CardHeader>
+      </Card>
+
+      <Card className="bg-blue-50 border-blue-100">
+        <CardHeader>
           <CardTitle>Survey Response Link</CardTitle>
           <CardDescription>
             Share this link with respondents to collect responses
@@ -76,18 +99,8 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
               value={`${process.env.NEXT_PUBLIC_APP_BASE_URL}/surveys/${survey.id}`}
               className="font-mono flex-1"
             />
-
           </div>
         </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Orientations</CardTitle>
-          <CardDescription>
-            {survey.orientations || "No orientations provided."}
-          </CardDescription>
-        </CardHeader>
       </Card>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -148,13 +161,7 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
         </Card>
       </div>
 
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">{survey.objective}</h1>
-          <p className="text-muted-foreground mt-2">
-            {survey.is_active ? "Active" : "Inactive"} • {responses.length} responses
-          </p>
-        </div>
+      <div className="flex items-center justify-end mb-8">
         <div className="flex gap-2">
           <ExportResponsesButton surveyId={survey.id} surveyObjective={survey.objective} />
           <ExportPDFButton surveyId={survey.id} surveyObjective={survey.objective} />
@@ -162,7 +169,31 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
       </div>
 
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Survey Summary</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Survey Summary</h2>
+          <form action={async () => {
+            "use server";
+            const currentResponses = await getResponsesServer(survey.id);
+            const allResponseSummaries = currentResponses
+              .filter(r => r.completed_at && r.summary)
+              .map(r => r.summary!);
+
+            const summary = await generateSurveySummary(
+              survey.objective,
+              survey.orientations,
+              allResponseSummaries
+            );
+            if (summary) {
+              await updateSurveySummary(survey.id, summary);
+              revalidatePath(`/dashboard/surveys/${survey.id}`);
+            }
+          }}>
+            <Button variant="outline" size="sm">
+              <Sparkles className="mr-2 h-4 w-4" />
+              Regenerate Summary
+            </Button>
+          </form>
+        </div>
         {survey.survey_summary ? (
           <div className="bg-muted/50 rounded-lg p-6">
             <p className="whitespace-pre-wrap">

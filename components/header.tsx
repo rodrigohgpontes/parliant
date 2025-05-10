@@ -20,7 +20,7 @@ export function Header({ showAuth = true }: HeaderProps) {
     const isSurveyResponse = pathname.includes("/surveys/") && !pathname.includes("/public");
 
     // Skip auth checks for public survey pages and survey response pages
-    if (isPublicSurvey || isSurveyResponse) {
+    if (isPublicSurvey) {
         return (
             <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-sm">
                 <div className="container flex h-16 items-center justify-between">

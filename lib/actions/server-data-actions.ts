@@ -522,4 +522,42 @@ export async function toggleSurveyStatus(surveyId: string) {
         SET is_active = NOT is_active
         WHERE id = ${surveyId}
     `;
+}
+
+export async function updateSurveyGuidelines(surveyId: string, guidelines: string) {
+    const session = await getSession();
+    const user = session?.user;
+
+    if (!user) {
+        throw new Error("Not authenticated");
+    }
+
+    // First get the user's UUID from the users table
+    const userResult = await db`
+        SELECT id FROM users 
+        WHERE auth0_id = ${user.sub}
+    ` as QueryResult<User>;
+
+    if (!userResult?.length) {
+        throw new Error(`User not found in database for auth0_id: ${user.sub}`);
+    }
+
+    const userId = userResult[0].id;
+
+    // Verify that the survey belongs to the user
+    const surveyResult = await db`
+        SELECT * FROM surveys 
+        WHERE id = ${surveyId} AND creator_id = ${userId}
+    ` as QueryResult<Survey>;
+
+    if (!surveyResult.length) {
+        throw new Error("Survey not found or not authorized");
+    }
+
+    // Update the guidelines
+    await db`
+        UPDATE surveys 
+        SET orientations = ${guidelines}
+        WHERE id = ${surveyId}
+    `;
 } 

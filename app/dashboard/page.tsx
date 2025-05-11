@@ -12,8 +12,8 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 
 // >>> TODO
-// - Make subscription page create a subscription record in the database (add will_cancel_at_period_end)
 // - Integrate with Stripe to handle payments
+// - IMprove terms of service and privacy policy
 // - Make sure production has all the env vars
 
 export default async function DashboardPage() {

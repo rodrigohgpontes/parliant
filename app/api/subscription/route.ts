@@ -2,6 +2,11 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import type { NextRequest } from 'next/server';
 import { getSession } from '@/lib/auth0';
+import Stripe from 'stripe';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2023-10-16',
+});
 
 export async function GET(request: NextRequest) {
     try {
@@ -90,7 +95,42 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
     try {
-        // For now, just return success
+        const session = await getSession();
+        const user = session?.user;
+
+        if (!user) {
+            return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+        }
+
+        // Get user's subscription
+        const userResult = await db`
+            SELECT s.stripe_subscription_id
+            FROM users u
+            JOIN subscriptions s ON u.id = s.user_id
+            WHERE u.auth0_id = ${user.sub}
+        `;
+
+        if (!userResult?.length) {
+            return NextResponse.json({ error: 'Subscription not found' }, { status: 404 });
+        }
+
+        const stripeSubscriptionId = userResult[0].stripe_subscription_id;
+
+        if (stripeSubscriptionId) {
+            // Cancel the Stripe subscription
+            await stripe.subscriptions.cancel(stripeSubscriptionId);
+        }
+
+        // Update subscription in database
+        await db`
+            UPDATE subscriptions 
+            SET 
+                plan = 'free',
+                status = 'canceled',
+                updated_at = CURRENT_TIMESTAMP
+            WHERE user_id = (SELECT id FROM users WHERE auth0_id = ${user.sub})
+        `;
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error cancelling subscription:', error);

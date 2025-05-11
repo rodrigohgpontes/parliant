@@ -143,6 +143,23 @@ export default function SubscriptionPage() {
     const handleSubscribe = async (planId: string) => {
         try {
             setUpgrading(planId);
+
+            if (planId === 'pro') {
+                // Create Stripe checkout session
+                const response = await fetch('/api/subscription/checkout', {
+                    method: 'POST',
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create checkout session');
+                }
+
+                const { url } = await response.json();
+                window.location.href = url;
+                return;
+            }
+
+            // For free plan or enterprise, use the existing logic
             const response = await fetch('/api/subscription', {
                 method: 'POST',
                 headers: {

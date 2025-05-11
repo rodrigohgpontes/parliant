@@ -3,6 +3,10 @@ import type { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import Stripe from 'stripe';
 
+// Prevent redirects and ensure proper handling of the webhook
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2025-04-30.basil',
 });
@@ -10,17 +14,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(request: NextRequest) {
-    console.log('>>> !!!!!!!!!!!!!!!');
-    console.log('>>> !!!!!!!!!!!!!!!');
-
-
     try {
         // Get the raw body as text
         const body = await request.text();
         const signature = request.headers.get('stripe-signature');
-        console.log('>>> body', body);
-        console.log('>>> signature', signature);
-        console.log('>>> webhookSecret', webhookSecret);
 
         if (!signature) {
             console.error('No stripe-signature header found');
@@ -47,7 +44,6 @@ export async function POST(request: NextRequest) {
             case 'checkout.session.completed': {
                 const session = event.data.object as Stripe.Checkout.Session;
                 const userId = session.metadata?.userId;
-                console.log('>>> userId', userId);
 
                 // For test events, we'll use a test user ID
                 if (!userId && process.env.NODE_ENV === 'development') {
@@ -77,7 +73,6 @@ export async function POST(request: NextRequest) {
                     console.error('No userId in session metadata and not in development mode');
                     return NextResponse.json({ error: 'No userId in session metadata' }, { status: 400 });
                 } else {
-                    console.log('>>> will insert subscription for user', session);
                     // Update subscription in database with real user
                     await db`
                         INSERT INTO subscriptions (user_id, plan, status, stripe_subscription_id)

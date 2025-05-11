@@ -4,15 +4,26 @@ import { db } from '@/lib/db';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2023-10-16',
+    apiVersion: '2025-04-30.basil',
 });
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(request: NextRequest) {
     try {
+        // Get the raw body as text
         const body = await request.text();
-        const signature = request.headers.get('stripe-signature')!;
+        const signature = request.headers.get('stripe-signature');
+
+        if (!signature) {
+            console.error('No stripe-signature header found');
+            return NextResponse.json({ error: 'No signature found' }, { status: 400 });
+        }
+
+        if (!webhookSecret) {
+            console.error('No webhook secret configured');
+            return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
+        }
 
         let event: Stripe.Event;
 
@@ -23,26 +34,53 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
         }
 
+        console.log('Webhook event type:', event.type);
+
         switch (event.type) {
             case 'checkout.session.completed': {
                 const session = event.data.object as Stripe.Checkout.Session;
                 const userId = session.metadata?.userId;
 
-                if (!userId) {
-                    throw new Error('No userId in session metadata');
-                }
+                // For test events, we'll use a test user ID
+                if (!userId && process.env.NODE_ENV === 'development') {
+                    console.log('Test event detected, using test user ID');
+                    // Get the first user from the database for testing
+                    const testUser = await db`
+                        SELECT id FROM users LIMIT 1
+                    `;
 
-                // Update subscription in database
-                await db`
-          INSERT INTO subscriptions (user_id, plan, status, stripe_subscription_id)
-          VALUES (${userId}, 'pro', 'active', ${session.subscription})
-          ON CONFLICT (user_id) 
-          DO UPDATE SET 
-            plan = 'pro',
-            status = 'active',
-            stripe_subscription_id = ${session.subscription},
-            updated_at = CURRENT_TIMESTAMP
-        `;
+                    if (!testUser?.length) {
+                        console.error('No test user found in database');
+                        return NextResponse.json({ error: 'No test user available' }, { status: 500 });
+                    }
+
+                    // Update subscription in database with test user
+                    await db`
+                        INSERT INTO subscriptions (user_id, plan, status, stripe_subscription_id)
+                        VALUES (${testUser[0].id}, 'pro', 'active', ${session.subscription})
+                        ON CONFLICT (user_id) 
+                        DO UPDATE SET 
+                            plan = 'pro',
+                            status = 'active',
+                            stripe_subscription_id = ${session.subscription},
+                            updated_at = CURRENT_TIMESTAMP
+                    `;
+                } else if (!userId) {
+                    console.error('No userId in session metadata and not in development mode');
+                    return NextResponse.json({ error: 'No userId in session metadata' }, { status: 400 });
+                } else {
+                    // Update subscription in database with real user
+                    await db`
+                        INSERT INTO subscriptions (user_id, plan, status, stripe_subscription_id)
+                        VALUES (${userId}, 'pro', 'active', ${session.subscription})
+                        ON CONFLICT (user_id) 
+                        DO UPDATE SET 
+                            plan = 'pro',
+                            status = 'active',
+                            stripe_subscription_id = ${session.subscription},
+                            updated_at = CURRENT_TIMESTAMP
+                    `;
+                }
                 break;
             }
 
@@ -51,13 +89,13 @@ export async function POST(request: NextRequest) {
 
                 // Update subscription in database
                 await db`
-          UPDATE subscriptions 
-          SET 
-            plan = 'free',
-            status = 'canceled',
-            updated_at = CURRENT_TIMESTAMP
-          WHERE stripe_subscription_id = ${subscription.id}
-        `;
+                    UPDATE subscriptions 
+                    SET 
+                        plan = 'free',
+                        status = 'canceled',
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE stripe_subscription_id = ${subscription.id}
+                `;
                 break;
             }
         }

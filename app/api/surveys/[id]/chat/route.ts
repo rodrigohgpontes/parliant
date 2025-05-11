@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { AIServiceFactory } from "@/lib/ai/service";
 
 export async function POST(
-    request: Request,
-    { params }: { params: { id: string; }; }
+    request: NextRequest,
+    context: { params: { id: string; }; }
 ) {
     try {
         const { messages, survey } = await request.json();

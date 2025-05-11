@@ -3,10 +3,12 @@ import type { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import Stripe from 'stripe';
 
-// Prevent redirects and ensure proper handling of the webhook
-export const dynamic = 'force-dynamic';
-export const runtime = 'nodejs';
-export const preferredRegion = 'auto';
+// Configuration specific to this webhook route
+export const config = {
+    api: {
+        bodyParser: false,
+    },
+};
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2025-04-30.basil',
@@ -15,16 +17,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(request: NextRequest) {
-    console.log('>>> Webhook received');
-    console.log('>>> Headers:', Object.fromEntries(request.headers.entries()));
-
     try {
         // Get the raw body as text
         const body = await request.text();
         const signature = request.headers.get('stripe-signature');
-        console.log('>>> Body:', body);
-        console.log('>>> Signature:', signature);
-        console.log('>>> Webhook Secret:', webhookSecret);
 
         if (!signature) {
             console.error('No stripe-signature header found');
@@ -45,18 +41,16 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
         }
 
-        console.log('>>> Webhook event type:', event.type);
+        console.log('Webhook event type:', event.type);
 
         switch (event.type) {
             case 'checkout.session.completed': {
                 const session = event.data.object as Stripe.Checkout.Session;
                 const userId = session.metadata?.userId;
-                console.log('>>> User ID from metadata:', userId);
-                console.log('>>> Full session data:', session);
 
                 // For test events, we'll use a test user ID
                 if (!userId && process.env.NODE_ENV === 'development') {
-                    console.log('>>> Test event detected, using test user ID');
+                    console.log('Test event detected, using test user ID');
                     // Get the first user from the database for testing
                     const testUser = await db`
                         SELECT id FROM users LIMIT 1
@@ -82,7 +76,6 @@ export async function POST(request: NextRequest) {
                     console.error('No userId in session metadata and not in development mode');
                     return NextResponse.json({ error: 'No userId in session metadata' }, { status: 400 });
                 } else {
-                    console.log('>>> Updating subscription for user:', userId);
                     // Update subscription in database with real user
                     await db`
                         INSERT INTO subscriptions (user_id, plan, status, stripe_subscription_id)
@@ -100,7 +93,6 @@ export async function POST(request: NextRequest) {
 
             case 'customer.subscription.deleted': {
                 const subscription = event.data.object as Stripe.Subscription;
-                console.log('>>> Processing subscription deletion:', subscription.id);
 
                 // Update subscription in database
                 await db`
@@ -115,10 +107,9 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        console.log('>>> Webhook processed successfully');
         return NextResponse.json({ received: true });
     } catch (error) {
-        console.error('>>> Error processing webhook:', error);
+        console.error('Error processing webhook:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 } 

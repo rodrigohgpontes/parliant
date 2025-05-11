@@ -5,9 +5,15 @@ import { createOrUpdateUser } from "@/lib/actions/user-actions";
 import { db } from "@/lib/db";
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  // Skip middleware for webhook endpoint
+  if (pathname === '/api/subscription/webhook') {
+    return NextResponse.next();
+  }
+
   const session = await auth0.getSession(request);
   const user = session?.user;
-  const pathname = request.nextUrl.pathname;
 
   // Let Auth0 handle all auth routes
   if (pathname.startsWith("/api/auth/") || pathname.startsWith("/auth/")) {
@@ -69,6 +75,6 @@ export const config = {
     "/signup",
     "/api/auth/:path*",
     "/auth/:path*",
-    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|logo-small.png).*)"
+    "/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt|logo-small.png|api/subscription/webhook).*)"
   ]
 };

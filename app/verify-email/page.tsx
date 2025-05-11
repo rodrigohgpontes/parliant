@@ -8,25 +8,20 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function VerifyEmailPage() {
-    const { user, isLoading, error, invalidate } = useUser();
+    const { user, isLoading, error } = useUser();
     const router = useRouter();
     const [logoutUrl, setLogoutUrl] = useState<string>("/auth/logout");
     const [isRedirecting, setIsRedirecting] = useState(false);
 
     useEffect(() => {
-        console.log('Auth state:', { user, isLoading, error });
-
         if (error || (!isLoading && !user)) {
-            console.log('Authentication issue, redirecting to home');
             router.replace("/");
             return;
         }
 
         // Check email verification status immediately when user data is available
         if (user && !isLoading) {
-            console.log('Checking initial email verification status:', user.email_verified);
-            if (user.email_verified) {
-                console.log('Email already verified, redirecting to dashboard');
+            if (user.is_email_verified || user.email_verified) {
                 router.replace("/dashboard");
                 return;
             }
@@ -37,17 +32,28 @@ export default function VerifyEmailPage() {
         // Set up polling to check email verification status
         const checkEmailVerification = async () => {
             try {
+                if (isRedirecting) return; // Prevent multiple redirects
+
                 console.log('Polling: Checking email verification status...');
                 // Force a session refresh
                 const response = await fetch('/api/auth/refresh', { method: 'POST' });
                 if (!response.ok) {
                     throw new Error('Failed to refresh session');
                 }
-                const updatedUser = await invalidate();
-                console.log('Polling: Updated user data:', updatedUser?.email_verified);
+                const profileResponse = await fetch('/api/auth/profile');
+                if (!profileResponse.ok) {
+                    throw new Error('Failed to fetch user profile');
+                }
+                const updatedUser = await profileResponse.json();
                 if (updatedUser?.email_verified) {
                     console.log('Polling: Email verified, redirecting to dashboard');
-                    router.replace("/dashboard");
+                    setIsRedirecting(true);
+                    clearInterval(intervalId);
+                    router.push('/dashboard', { scroll: false });
+                    // Force a hard navigation if the router.push doesn't work
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1000);
                 }
             } catch (error) {
                 console.error('Error checking session:', error);
@@ -59,7 +65,7 @@ export default function VerifyEmailPage() {
         const intervalId = setInterval(checkEmailVerification, 5000);
 
         return () => clearInterval(intervalId);
-    }, [user, isLoading, error, router, invalidate]);
+    }, [user, isLoading, error, router, isRedirecting]);
 
     if (isLoading) {
         return (

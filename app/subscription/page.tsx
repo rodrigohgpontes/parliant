@@ -101,6 +101,7 @@ export default function SubscriptionPage() {
         monthlyData: []
     });
     const [loading, setLoading] = useState(true);
+    const [upgrading, setUpgrading] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteConfirmation, setDeleteConfirmation] = useState('');
@@ -141,12 +142,16 @@ export default function SubscriptionPage() {
 
     const handleSubscribe = async (planId: string) => {
         try {
+            setUpgrading(planId);
             const response = await fetch('/api/subscription', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ plan: planId }),
+                body: JSON.stringify({
+                    plan: planId,
+                    userId: user?.sub
+                }),
             });
 
             if (!response.ok) {
@@ -157,6 +162,8 @@ export default function SubscriptionPage() {
             setCurrentPlan(planId);
         } catch (error) {
             toast.error('Failed to update subscription');
+        } finally {
+            setUpgrading(null);
         }
     };
 
@@ -295,22 +302,30 @@ export default function SubscriptionPage() {
                                                 </Button>
                                             </div>
                                         </>
+                                    ) : currentPlan === plan.id && plan.id !== 'free' ? (
+                                        <Button
+                                            variant="destructive"
+                                            onClick={handleCancel}
+                                            className="w-full"
+                                        >
+                                            Cancel Subscription
+                                        </Button>
                                     ) : currentPlan === plan.id ? (
-                                        plan.id !== 'free' && (
-                                            <Button
-                                                variant="destructive"
-                                                onClick={handleCancel}
-                                                className="w-full"
-                                            >
-                                                Cancel Subscription
-                                            </Button>
-                                        )
+                                        <div className="w-full text-center text-sm text-muted-foreground">
+                                            Current Plan
+                                        </div>
                                     ) : (
                                         <Button
                                             onClick={() => handleSubscribe(plan.id)}
                                             className="w-full"
+                                            disabled={upgrading === plan.id}
                                         >
-                                            {plan.price === 0 ? 'Downgrade' : 'Upgrade'}
+                                            {upgrading === plan.id ? (
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                                    {plan.price === 0 ? 'Downgrading...' : 'Upgrading...'}
+                                                </div>
+                                            ) : plan.price === 0 ? 'Downgrade' : 'Upgrade'}
                                         </Button>
                                     )}
                                 </CardFooter>

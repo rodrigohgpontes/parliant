@@ -19,8 +19,26 @@ export async function middleware(request: NextRequest) {
     // Create or update user in our database
     await createOrUpdateUser(user);
 
+    // Get latest user data from Auth0 Management API
+    let isEmailVerified = user.email_verified;
+    try {
+      const response = await fetch(`https://${process.env.AUTH0_DOMAIN}/api/v2/users/${user.sub}`, {
+        headers: {
+          'Authorization': `Bearer ${process.env.AUTH0_MANAGEMENT_API_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const userProfile = await response.json();
+        isEmailVerified = userProfile.email_verified;
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+
     // Check if email is verified
-    if (!user.email_verified) {
+    if (!isEmailVerified) {
       // Allow access to verification page, logout, and public pages
       if (pathname === "/verify-email" ||
         pathname === "/" ||

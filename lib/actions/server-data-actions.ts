@@ -53,10 +53,12 @@ export async function getSurveysServer(): Promise<Survey[]> {
         throw new Error("Not authenticated");
     }
 
-    // First get the user's UUID from the users table
+    // First get the user's UUID and subscription status
     const userResult = await db`
-        SELECT id, auth0_id, email FROM users 
-        WHERE auth0_id = ${user.sub}
+        SELECT u.id, u.auth0_id, u.email, s.plan, s.status
+        FROM users u
+        LEFT JOIN subscriptions s ON u.auth0_id = s.user_id
+        WHERE u.auth0_id = ${user.sub}
     ` as QueryResult<User>;
 
     if (!userResult?.length) {
@@ -64,6 +66,50 @@ export async function getSurveysServer(): Promise<Survey[]> {
     }
 
     const userId = userResult[0].id;
+    const subscriptionPlan = userResult[0].plan || 'free';
+    const subscriptionStatus = userResult[0].status || 'active';
+
+    // Check if user has an active subscription
+    const hasActiveSubscription = subscriptionStatus === 'active' && (subscriptionPlan === 'pro' || subscriptionPlan === 'enterprise');
+    let allowCreateSurvey = true;
+
+    // If user is on free plan, check survey count
+    if (!hasActiveSubscription) {
+        const surveyCount = await db`
+            SELECT COUNT(*) as count FROM surveys 
+            WHERE creator_id = ${userId}
+            AND deleted_at IS NULL
+        `;
+
+        if (surveyCount[0].count > 3) {
+            allowCreateSurvey = false;
+        }
+    }
+
+    if (!allowCreateSurvey) {
+        const existingSurveys = await db`
+            SELECT COUNT(*) as count FROM surveys 
+            WHERE creator_id = ${userId}
+            AND deleted_at IS NULL
+        ` as QueryResult<Survey>;
+
+        return existingSurveys.map(survey => ({
+            id: survey.id,
+            objective: survey.objective,
+            orientations: survey.orientations,
+            created_at: new Date(survey.created_at),
+            updated_at: new Date(survey.updated_at),
+            creator_id: survey.creator_id,
+            is_active: survey.is_active,
+            allow_anonymous: survey.allow_anonymous,
+            is_one_per_respondent: survey.is_one_per_respondent,
+            end_date: survey.end_date ? new Date(survey.end_date) : undefined,
+            max_questions: survey.max_questions,
+            max_characters: survey.max_characters,
+            survey_summary: survey.survey_summary,
+            survey_tags: survey.survey_tags
+        }));;
+    }
 
     const result = await db`
         SELECT * FROM surveys 

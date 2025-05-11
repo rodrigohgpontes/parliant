@@ -149,7 +149,7 @@ export async function createAuthenticatedSurvey(data: FormData) {
         `;
 
         if (surveyCount[0].count >= 3) {
-            throw new Error("Free plan users can only create up to 3 surveys. Please upgrade to create more surveys.");
+            return;
         }
     }
 

@@ -19,7 +19,6 @@ export default async function ShareSurveyPage({
   }
 
   const surveyUrl = `${process.env.NEXT_PUBLIC_APP_BASE_URL}/surveys/${surveyId}`;
-  console.log('>>> env', process.env);
 
   return (
     <div>

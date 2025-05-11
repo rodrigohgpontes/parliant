@@ -21,6 +21,8 @@ CREATE TABLE IF NOT EXISTS subscriptions (
     status text NOT NULL DEFAULT 'active'::text,
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
+    will_cancel_at_period_end boolean NOT NULL DEFAULT false,
+    stripe_subscription_id text,
     PRIMARY KEY (id),
     UNIQUE (user_id)
 );

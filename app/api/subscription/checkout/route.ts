@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import Stripe from 'stripe';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2023-10-16',
+    apiVersion: '2025-04-30.basil',
 });
 
 export async function POST(request: NextRequest) {
@@ -19,9 +19,9 @@ export async function POST(request: NextRequest) {
 
         // Get user's UUID from the users table
         const userResult = await db`
-      SELECT id, email FROM users 
-      WHERE auth0_id = ${user.sub}
-    `;
+            SELECT id, email FROM users 
+            WHERE auth0_id = ${user.sub}
+        `;
 
         if (!userResult?.length) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -29,6 +29,9 @@ export async function POST(request: NextRequest) {
 
         const userUuid = userResult[0].id;
         const userEmail = userResult[0].email;
+
+        // Get coupon code from request if provided
+        const { couponCode } = await request.json().catch(() => ({}));
 
         // Create a Stripe checkout session
         const checkoutSession = await stripe.checkout.sessions.create({
@@ -52,6 +55,14 @@ export async function POST(request: NextRequest) {
             metadata: {
                 userId: userUuid,
             },
+            // Add coupon if provided
+            ...(couponCode && {
+                discounts: [{
+                    coupon: couponCode,
+                }],
+            }),
+            // Allow customers to enter their own coupon code
+            allow_promotion_codes: true,
         });
 
         return NextResponse.json({ url: checkoutSession.url });

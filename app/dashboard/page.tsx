@@ -11,11 +11,6 @@ import { getSession } from "@/lib/auth0";
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 
-// >>> TODO
-// - Integrate with Stripe to handle payments
-// - IMprove terms of service and privacy policy
-// - Make sure production has all the env vars
-
 export default async function DashboardPage() {
   const surveys = await getSurveysServerAction();
   const totalSurveys = surveys.length;

@@ -17,7 +17,7 @@ export default function Home() {
                 </h1>
                 <p className="text-xl text-muted-foreground md:text-2xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
                   Collect deeper insights with open-ended surveys conducted by AI. No forms, no rigid questions—just
-                  honest, complete answers.
+                  honest, complete answers. Respondents can type or use voice to share their thoughts naturally.
                 </p>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Link href="/signup">
@@ -122,10 +122,10 @@ export default function Home() {
               <div className="space-y-4 order-2 lg:order-1">
                 <div className="space-y-2">
                   <h3 className="text-2xl font-bold">OPEN-ENDED SURVEYS</h3>
-                  <p className="text-3xl font-bold md:text-4xl">Get up to 5x more qualitative data</p>
+                  <p className="text-3xl font-bold md:text-4xl">Get richer qualitative data</p>
                   <p className="text-muted-foreground md:text-xl">
                     When your surveys feel like conversations, people share more. Our AI asks relevant follow-up
-                    questions and adapts to responses in real-time.
+                    questions and adapts to responses in real-time. Respondents can type or speak their answers.
                   </p>
                 </div>
                 <Link href="/signup">

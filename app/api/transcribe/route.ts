@@ -26,11 +26,18 @@ export async function POST(request: Request) {
             );
         }
 
+        // Log audio file details for debugging
+        console.log('Received audio file:', {
+            size: audioFile.size,
+            type: audioFile.type
+        });
+
         // Convert blob to buffer
         const buffer = Buffer.from(await audioFile.arrayBuffer());
 
-        // Create a temporary file
-        const tempFile = new File([buffer], "audio.webm", { type: "audio/webm" });
+        // Create a temporary file with the appropriate extension based on the MIME type
+        const extension = audioFile.type === 'audio/mp4' ? 'mp4' : 'webm';
+        const tempFile = new File([buffer], `audio.${extension}`, { type: audioFile.type });
 
         // Transcribe using OpenAI Whisper
         const transcription = await openai.audio.transcriptions.create({
@@ -38,11 +45,16 @@ export async function POST(request: Request) {
             model: "whisper-1",
         });
 
+        // Log successful transcription
+        console.log('Transcription successful:', {
+            text: transcription.text
+        });
+
         return NextResponse.json({ text: transcription.text });
     } catch (error) {
         console.error("Error transcribing audio:", error);
         return NextResponse.json(
-            { error: "Failed to transcribe audio" },
+            { error: "Failed to transcribe audio. Please try again." },
             { status: 500 }
         );
     }

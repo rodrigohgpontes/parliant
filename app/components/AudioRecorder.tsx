@@ -36,7 +36,22 @@ export function AudioRecorder({ onTranscriptionComplete, onCancel }: AudioRecord
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             streamRef.current = stream;
-            const mediaRecorder = new MediaRecorder(stream);
+
+            // Detect if we're on a mobile device
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+            // Use different MIME types based on device
+            const mimeType = isMobile ? 'audio/mp4' : 'audio/webm';
+
+            // Check if the MIME type is supported
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                console.warn(`MIME type ${mimeType} not supported, falling back to default`);
+            }
+
+            const mediaRecorder = new MediaRecorder(stream, {
+                mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : undefined
+            });
+
             mediaRecorderRef.current = mediaRecorder;
             audioChunksRef.current = [];
 
@@ -47,7 +62,9 @@ export function AudioRecorder({ onTranscriptionComplete, onCancel }: AudioRecord
             };
 
             mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                const audioBlob = new Blob(audioChunksRef.current, {
+                    type: isMobile ? 'audio/mp4' : 'audio/webm'
+                });
                 await transcribeAudio(audioBlob);
                 if (streamRef.current) {
                     streamRef.current.getTracks().forEach(track => track.stop());
@@ -77,6 +94,8 @@ export function AudioRecorder({ onTranscriptionComplete, onCancel }: AudioRecord
             timerRef.current = requestAnimationFrame(updateTimer);
         } catch (error) {
             console.error('Error accessing microphone:', error);
+            // Show a more user-friendly error message
+            alert('Unable to access microphone. Please make sure you have granted microphone permissions and try again.');
             onCancel();
         }
     };
@@ -97,6 +116,11 @@ export function AudioRecorder({ onTranscriptionComplete, onCancel }: AudioRecord
             const formData = new FormData();
             formData.append('audio', audioBlob);
 
+            console.log('Sending audio for transcription:', {
+                size: audioBlob.size,
+                type: audioBlob.type
+            });
+
             const response = await fetch('/api/transcribe', {
                 method: 'POST',
                 body: formData,
@@ -107,6 +131,7 @@ export function AudioRecorder({ onTranscriptionComplete, onCancel }: AudioRecord
                 if (response.status === 400 && data.error?.includes('too large')) {
                     alert('Recording is too long. Please keep it under 1 minute.');
                 } else {
+                    console.error('Transcription failed:', data);
                     throw new Error('Transcription failed');
                 }
                 onCancel();
@@ -114,9 +139,11 @@ export function AudioRecorder({ onTranscriptionComplete, onCancel }: AudioRecord
             }
 
             const data = await response.json();
+            console.log('Transcription received:', data);
             onTranscriptionComplete(data.text);
         } catch (error) {
             console.error('Error transcribing audio:', error);
+            alert('Failed to transcribe audio. Please try again.');
             onCancel();
         } finally {
             setIsTranscribing(false);

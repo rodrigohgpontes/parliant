@@ -3,13 +3,6 @@ import type { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import Stripe from 'stripe';
 
-// Configuration specific to this webhook route
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
-
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2025-04-30.basil',
 });

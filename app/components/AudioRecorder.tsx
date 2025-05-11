@@ -39,17 +39,44 @@ export function AudioRecorder({ onTranscriptionComplete, onCancel }: AudioRecord
 
             // Detect if we're on a mobile device
             const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            console.log('Device type:', isMobile ? 'mobile' : 'desktop');
 
-            // Use different MIME types based on device
-            const mimeType = isMobile ? 'audio/mp4' : 'audio/webm';
+            // List supported MIME types
+            const supportedTypes = [
+                'audio/webm',
+                'audio/webm;codecs=opus',
+                'audio/mp4',
+                'audio/mpeg',
+                'audio/ogg;codecs=opus'
+            ];
 
-            // Check if the MIME type is supported
-            if (!MediaRecorder.isTypeSupported(mimeType)) {
-                console.warn(`MIME type ${mimeType} not supported, falling back to default`);
+            console.log('Supported MIME types:', supportedTypes.filter(type => MediaRecorder.isTypeSupported(type)));
+
+            // Choose the best supported MIME type
+            let mimeType = undefined;
+            if (isMobile) {
+                // Try mobile-friendly formats first
+                if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                    mimeType = 'audio/mp4';
+                } else if (MediaRecorder.isTypeSupported('audio/mpeg')) {
+                    mimeType = 'audio/mpeg';
+                } else if (MediaRecorder.isTypeSupported('audio/ogg;codecs=opus')) {
+                    mimeType = 'audio/ogg;codecs=opus';
+                }
             }
 
+            // Fallback to webm if no mobile format is supported
+            if (!mimeType && MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+                mimeType = 'audio/webm;codecs=opus';
+            } else if (!mimeType && MediaRecorder.isTypeSupported('audio/webm')) {
+                mimeType = 'audio/webm';
+            }
+
+            console.log('Selected MIME type:', mimeType);
+
             const mediaRecorder = new MediaRecorder(stream, {
-                mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : undefined
+                mimeType: mimeType,
+                audioBitsPerSecond: 128000 // Set a consistent bitrate
             });
 
             mediaRecorderRef.current = mediaRecorder;
@@ -57,14 +84,25 @@ export function AudioRecorder({ onTranscriptionComplete, onCancel }: AudioRecord
 
             mediaRecorder.ondataavailable = (event) => {
                 if (event.data.size > 0) {
+                    console.log('Received audio chunk:', {
+                        size: event.data.size,
+                        type: event.data.type
+                    });
                     audioChunksRef.current.push(event.data);
                 }
             };
 
             mediaRecorder.onstop = async () => {
                 const audioBlob = new Blob(audioChunksRef.current, {
-                    type: isMobile ? 'audio/mp4' : 'audio/webm'
+                    type: mimeType || 'audio/webm'
                 });
+
+                console.log('Final audio blob:', {
+                    size: audioBlob.size,
+                    type: audioBlob.type,
+                    chunks: audioChunksRef.current.length
+                });
+
                 await transcribeAudio(audioBlob);
                 if (streamRef.current) {
                     streamRef.current.getTracks().forEach(track => track.stop());
@@ -72,7 +110,8 @@ export function AudioRecorder({ onTranscriptionComplete, onCancel }: AudioRecord
                 }
             };
 
-            mediaRecorder.start();
+            // Request data every second to ensure we get chunks
+            mediaRecorder.start(1000);
             setIsRecording(true);
             setRecordingDuration(0);
             startTimeRef.current = Date.now();

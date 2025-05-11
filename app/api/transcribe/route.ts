@@ -34,23 +34,59 @@ export async function POST(request: Request) {
 
         // Convert blob to buffer
         const buffer = Buffer.from(await audioFile.arrayBuffer());
+        console.log('Converted to buffer:', {
+            bufferSize: buffer.length,
+            bufferType: typeof buffer
+        });
 
-        // Create a temporary file with the appropriate extension based on the MIME type
-        const extension = audioFile.type === 'audio/mp4' ? 'mp4' : 'webm';
-        const tempFile = new File([buffer], `audio.${extension}`, { type: audioFile.type });
+        // Determine the correct file extension and MIME type
+        let extension = 'webm';
+        let mimeType = 'audio/webm';
+
+        if (audioFile.type.includes('mp4')) {
+            extension = 'mp4';
+            mimeType = 'audio/mp4';
+        } else if (audioFile.type.includes('mpeg')) {
+            extension = 'mp3';
+            mimeType = 'audio/mpeg';
+        } else if (audioFile.type.includes('ogg')) {
+            extension = 'ogg';
+            mimeType = 'audio/ogg';
+        }
+
+        console.log('Using file format:', { extension, mimeType });
+
+        // Create a temporary file
+        const tempFile = new File([buffer], `audio.${extension}`, { type: mimeType });
+        console.log('Created temporary file:', {
+            name: tempFile.name,
+            type: tempFile.type,
+            size: tempFile.size
+        });
 
         // Transcribe using OpenAI Whisper
         const transcription = await openai.audio.transcriptions.create({
             file: tempFile,
             model: "whisper-1",
+            language: "en", // Specify English language
+            response_format: "text" // Request plain text response
         });
 
         // Log successful transcription
         console.log('Transcription successful:', {
-            text: transcription.text
+            text: transcription,
+            textLength: transcription.length
         });
 
-        return NextResponse.json({ text: transcription.text });
+        if (!transcription || transcription.trim().length === 0) {
+            console.warn('Received empty transcription');
+            return NextResponse.json(
+                { error: "Received empty transcription. Please try again." },
+                { status: 400 }
+            );
+        }
+
+        return NextResponse.json({ text: transcription });
     } catch (error) {
         console.error("Error transcribing audio:", error);
         return NextResponse.json(

@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
-import { Send, Shuffle, Mic } from "lucide-react";
+import { Send, Shuffle, Mic, RefreshCw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import { Parly } from "@/components/parly";
 import Mascot from '@/app/components/Mascot';
 import { MascotColor, MascotEnergy, MascotEyes, MascotMouth, MascotEmote } from '@/app/lib/mascot-constants';
 import { AudioRecorder } from "@/app/components/AudioRecorder";
+import { Loader2 } from "lucide-react";
 
 interface Survey {
   id: string;
@@ -107,7 +108,7 @@ function getRandomParlyMood() {
   const colors: MascotColor[] = ["blue", "green", "red", "yellow"];
   const energies: MascotEnergy[] = ["very_low", "low", "neutral", "high", "very_high"];
   const eyes: MascotEyes[] = ["tense", "absent", "uninstered", "sad", "uncomfortable", "angry", "suspicious", "judgemental", "determined", "crazy", "bored"];
-  const mouths: MascotMouth[] = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u"];
+  const mouths: MascotMouth[] = ["happy", "unresponsive", "sad", "quiet", "suffering", "smirky", "tense", "nervous", "overwhelmed", "cute", "shocked", "disappointed", "joyful", "scared", "uncomfortable", "embarassed", "frown", "surprised", "regret", "fun"];
   const emotes: MascotEmote[] = ["thinking", "heart", "confused"];
 
   return {
@@ -121,6 +122,8 @@ function getRandomParlyMood() {
 
 export default function SurveyResponsePage() {
   const params = useParams();
+  const searchParams = useSearchParams();
+  const responseId = searchParams.get('responseId');
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -131,7 +134,7 @@ export default function SurveyResponsePage() {
   const [showRespondentModal, setShowRespondentModal] = useState(false);
   const [respondentName, setRespondentName] = useState("");
   const [respondentEmail, setRespondentEmail] = useState("");
-  const [responseId, setResponseId] = useState<string | null>(null);
+  const [currentResponseId, setCurrentResponseId] = useState<string | null>(responseId);
   const [insightLevel, setInsightLevel] = useState(0);
   const [insightExplanation, setInsightExplanation] = useState<string | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
@@ -155,6 +158,21 @@ export default function SurveyResponsePage() {
         if (res.ok) {
           const data = await res.json();
           setSurvey(data);
+
+          // If we have a response ID, fetch the existing response
+          if (responseId) {
+            const responseRes = await fetch(`/api/surveys/${params.id}/public/responses/${responseId}`);
+            if (responseRes.ok) {
+              const responseData = await responseRes.json();
+              setMessages(responseData.conversation);
+              setCurrentResponseId(responseData.id);
+              if (responseData.completed_at) {
+                setIsSubmitted(true);
+              }
+            }
+            setInitialLoading(false);
+            return;
+          }
 
           // Initialize conversation with first question if available, otherwise get AI's first message
           if (data.first_question) {
@@ -199,7 +217,7 @@ export default function SurveyResponsePage() {
     };
 
     fetchSurvey();
-  }, [params.id]);
+  }, [params.id, responseId]);
 
   useEffect(() => {
     setParlyMood(getParlyMood(insightLevel, insightExplanation));
@@ -207,7 +225,7 @@ export default function SurveyResponsePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isSubmitted) return;
 
     const userMessage = input.trim();
     setInput("");
@@ -215,7 +233,7 @@ export default function SurveyResponsePage() {
 
     try {
       // If this is the first message, create a response record first
-      if (!responseId) {
+      if (!currentResponseId) {
         // Add user message to the conversation first
         const newMessages = [
           ...messages,
@@ -248,7 +266,7 @@ export default function SurveyResponsePage() {
 
         if (res.ok) {
           const data = await res.json();
-          setResponseId(data.id);
+          setCurrentResponseId(data.id);
 
           // Show the modal for respondent info
           setShowRespondentModal(true);
@@ -330,7 +348,7 @@ export default function SurveyResponsePage() {
           setMessages(updatedMessages);
 
           // Update the response in the database
-          await fetch(`/api/surveys/${params.id}/responses/${responseId}`, {
+          await fetch(`/api/surveys/${params.id}/responses/${currentResponseId}`, {
             method: "PATCH",
             headers: {
               "Content-Type": "application/json",
@@ -342,7 +360,7 @@ export default function SurveyResponsePage() {
 
           // Evaluate the conversation insight after both messages are added
           setIsEvaluating(true);
-          const evaluationRes = await fetch(`/api/surveys/${params.id}/responses/${responseId}/evaluate`, {
+          const evaluationRes = await fetch(`/api/surveys/${params.id}/responses/${currentResponseId}/evaluate`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -362,9 +380,8 @@ export default function SurveyResponsePage() {
       }
     } catch (error) {
       console.error("Error getting AI response:", error);
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   };
 
   const handleRespondentSubmit = async (e: React.FormEvent) => {
@@ -378,7 +395,7 @@ export default function SurveyResponsePage() {
 
     try {
       // Update the response with respondent info
-      const res = await fetch(`/api/surveys/${params.id}/responses/${responseId}`, {
+      const res = await fetch(`/api/surveys/${params.id}/responses/${currentResponseId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -404,7 +421,7 @@ export default function SurveyResponsePage() {
   const handleFinalSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const res = await fetch(`/api/surveys/${params.id}/responses/${responseId}`, {
+      const res = await fetch(`/api/surveys/${params.id}/responses/${currentResponseId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -468,176 +485,209 @@ export default function SurveyResponsePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa] bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]">
-      <div className="container max-w-2xl py-6 sm:py-12 px-4 sm:px-6 font-[system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif]">
-        <div className="space-y-4 sm:space-y-6">
-          <div>
-            <h1 className="text-2xl sm:text-4xl font-semibold tracking-tight text-foreground/90">{survey.title}</h1>
-            {survey.objective && (
-              <p className="mt-2 sm:mt-3 text-base sm:text-lg leading-relaxed">{survey.objective}</p>
-            )}
-            <p className="mt-2 text-sm text-primary">This survey uses an AI chat format to make the process more natural and engaging. Feel free to express yourself in your own voice and style - there's no need for formal language.</p>
-          </div>
-
-          <div className="flex gap-4">
-            <div className="flex-1 flex flex-col h-[700px] sm:h-[700px] border rounded-2xl overflow-hidden bg-white">
-              <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 sm:space-y-4">
-                {messages.filter(message => message.role !== "system").map((message, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                  >
-                    <div
-                      className={`max-w-[85%] sm:max-w-[80%] rounded-2xl p-3 sm:p-4 ${message.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
-                        }`}
-                    >
-                      <p className="whitespace-pre-wrap leading-relaxed text-[14px] sm:text-[15px]">{message.content}</p>
-                    </div>
-                  </div>
-                ))}
-                {(isLoading || initialLoading) && (
-                  <div className="flex justify-start">
-                    <div className="bg-muted rounded-2xl p-2 sm:p-3">
-                      <LoadingDots />
-                    </div>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
+    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+            {initialLoading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
-
-              <div className="border-t p-3 sm:p-4 space-y-3 sm:space-y-4">
-                <form onSubmit={handleSubmit} className="space-y-3">
-                  <Textarea
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Type your response... (Ctrl+Enter or ⌘+Enter to send)"
-                    className="w-full text-[14px] sm:text-[15px] rounded-2xl resize-none min-h-[120px]"
-                    rows={5}
-                    disabled={isLoading}
-                  />
+            ) : isSubmitted ? (
+              <div className="text-center py-12">
+                <h2 className="text-2xl font-semibold mb-4">Thank you for your response!</h2>
+                <p className="text-gray-600 mb-8">Your feedback has been submitted successfully.</p>
+                <Button
+                  onClick={() => window.location.href = '/'}
+                  className="text-[14px] sm:text-[15px] font-medium rounded-full"
+                >
+                  Return Home
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-6">
                   <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      {!showAudioRecorder ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="rounded-full"
-                          onClick={() => setShowAudioRecorder(true)}
-                          disabled={isLoading}
-                        >
-                          <Mic className="h-4 w-4 mr-2" />
-                          Answer with Audio
-                        </Button>
-                      ) : (
-                        <AudioRecorder
-                          onTranscriptionComplete={handleTranscriptionComplete}
-                          onCancel={() => setShowAudioRecorder(false)}
-                        />
-                      )}
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
+                          P
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-white border-2 border-white">
+                          <div className="w-full h-full rounded-full bg-green-500"></div>
+                        </div>
+                      </div>
+                      <div>
+                        <h1 className="text-lg font-semibold">Parly</h1>
+                        <p className="text-sm text-gray-500">
+                          {parlyMood.color} {parlyMood.energy} {parlyMood.eyes} {parlyMood.mouth}
+                          {parlyMood.emote ? ` ${parlyMood.emote}` : ''}
+                        </p>
+                      </div>
                     </div>
-                    <Button type="submit" disabled={isLoading} className="rounded-full">
-                      <Send className="h-4 w-4" />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleRandomize}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <RefreshCw className="h-4 w-4" />
                     </Button>
                   </div>
-                </form>
-                <div className="flex items-center justify-center w-full">
-                  <div className="w-[85%] sm:w-3/4">
-                    <Thermometer value={insightLevel} max={10} explanation={insightExplanation || undefined} />
+
+                  <div className="space-y-4">
+                    {messages.map((message, index) => (
+                      <div
+                        key={index}
+                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div
+                          className={`max-w-[80%] rounded-2xl px-4 py-2 ${message.role === 'user'
+                            ? 'bg-primary text-primary-foreground rounded-br-none'
+                            : 'bg-muted rounded-bl-none'
+                            }`}
+                        >
+                          <p className="text-sm font-medium mb-1 opacity-70">
+                            {message.role === 'user' ? 'You' : 'Assistant'}
+                          </p>
+                          <p className="whitespace-pre-wrap">{message.content}</p>
+                        </div>
+                      </div>
+                    ))}
+                    <div ref={messagesEndRef} />
+                  </div>
+
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="relative">
+                      <Textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Type your message..."
+                        className="min-h-[100px] resize-none pr-24"
+                        disabled={isLoading || isSubmitted}
+                      />
+                      <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowAudioRecorder(true)}
+                          disabled={isLoading || isSubmitted}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          <Mic className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={!input.trim() || isLoading || isSubmitted}
+                          className="text-[14px] sm:text-[15px] font-medium rounded-full"
+                        >
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            "Send"
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </form>
+
+                  <div className="flex items-center justify-center w-full">
+                    <div className="w-[85%] sm:w-3/4">
+                      <Thermometer value={insightLevel} max={10} explanation={insightExplanation || undefined} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          <div className="flex justify-end">
-            <Button
-              onClick={handleFinalSubmit}
-              disabled={isSubmitting || messages.length < 2 || !responseId}
-              className="text-[14px] sm:text-[15px] font-medium rounded-full"
-            >
-              {isSubmitting ? "Submitting..." : "Submit Survey"}
-            </Button>
+                <div className="flex justify-end mt-6">
+                  <Button
+                    onClick={handleFinalSubmit}
+                    disabled={isSubmitting || messages.length < 2 || !currentResponseId}
+                    className="text-[14px] sm:text-[15px] font-medium rounded-full"
+                  >
+                    {isSubmitting ? "Submitting..." : "Submit Survey"}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </div>
-
-        <Dialog
-          open={showRespondentModal}
-          onOpenChange={(open) => {
-            // Only allow closing if anonymous answers are allowed or if we're opening the modal
-            if (survey.allow_anonymous || open) {
-              setShowRespondentModal(open);
-            }
-          }}
-        >
-          <DialogContent className="rounded-2xl" onInteractOutside={(e) => {
-            // Prevent closing via clicking outside if anonymous answers are not allowed
-            if (!survey.allow_anonymous) {
-              e.preventDefault();
-            }
-          }}>
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-semibold tracking-tight">Tell us about yourself</DialogTitle>
-              <DialogDescription className="text-[15px] leading-relaxed">
-                {survey.allow_anonymous
-                  ? "This information is optional. You can skip this step if you prefer to remain anonymous."
-                  : "Please provide your information to continue with the survey."}
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleRespondentSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-[15px] font-medium">Name</Label>
-                <Input
-                  id="name"
-                  value={respondentName}
-                  onChange={(e) => setRespondentName(e.target.value)}
-                  placeholder="Your name"
-                  required={!survey.allow_anonymous}
-                  className="text-[15px] rounded-xl"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-[15px] font-medium">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={respondentEmail}
-                  onChange={(e) => setRespondentEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  required={!survey.allow_anonymous}
-                  className="text-[15px] rounded-xl"
-                />
-              </div>
-              <DialogFooter className="gap-2">
-                {survey.allow_anonymous && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      setShowRespondentModal(false);
-                      setInput("");
-                      handleRespondentSubmit(new Event("submit") as any);
-                    }}
-                    className="text-[15px] font-medium rounded-full"
-                  >
-                    Skip
-                  </Button>
-                )}
-                <Button
-                  type="submit"
-                  className="text-[15px] font-medium rounded-full"
-                  disabled={!survey.allow_anonymous && (!respondentName.trim() || !respondentEmail.trim())}
-                >
-                  Continue
-                </Button>
-              </DialogFooter>
-            </form>
-          </DialogContent>
-        </Dialog>
       </div>
+
+      <Dialog
+        open={showRespondentModal}
+        onOpenChange={(open) => {
+          // Only allow closing if anonymous answers are allowed or if we're opening the modal
+          if (survey?.allow_anonymous || open) {
+            setShowRespondentModal(open);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Tell us about yourself</DialogTitle>
+            <DialogDescription>
+              {survey?.allow_anonymous
+                ? "This information is optional. You can skip this step."
+                : "Please provide your information to continue."}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleRespondentSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                value={respondentName}
+                onChange={(e) => setRespondentName(e.target.value)}
+                placeholder="Your name"
+                required={!survey?.allow_anonymous}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={respondentEmail}
+                onChange={(e) => setRespondentEmail(e.target.value)}
+                placeholder="Your email"
+                required={!survey?.allow_anonymous}
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              {survey?.allow_anonymous && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setShowRespondentModal(false)}
+                >
+                  Skip
+                </Button>
+              )}
+              <Button type="submit">Continue</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showAudioRecorder} onOpenChange={setShowAudioRecorder}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Record Audio</DialogTitle>
+            <DialogDescription>
+              Record your message and we'll transcribe it for you.
+            </DialogDescription>
+          </DialogHeader>
+          <AudioRecorder
+            onTranscriptionComplete={handleTranscriptionComplete}
+            onCancel={() => setShowAudioRecorder(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

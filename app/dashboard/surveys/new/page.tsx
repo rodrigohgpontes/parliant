@@ -157,7 +157,8 @@ export default function CreateSurveyPage() {
                 <li>Be specific about the knowledge or insights you want to gain</li>
                 <li>Focus on what you want to learn, not how you'll use the information</li>
                 <li>Make it clear and concise, but detailed enough to guide the AI</li>
-                <li>Example: "Understand the key challenges faced by remote workers in maintaining work-life balance"</li>
+                <li>Format your objective as a clear, specific question in second person voice</li>
+                <li>Example: "What challenges do you face in maintaining work-life balance while working remotely?"</li>
               </ul>
             </div>
           </CardContent>

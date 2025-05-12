@@ -28,10 +28,10 @@ export async function POST(request: Request) {
 - Be specific about the knowledge or insights to be gained
 - Focus on what to learn, not how the information will be used
 - Be clear and concise, but detailed enough to guide the AI
-- Use a conversational, informal tone that feels natural and approachable
+- Use a professional, but conversational, question-based format in second person voice (addressing the respondent directly)
 - Be 1-2 short sentences maximum
 
-Return ONLY the rephrased objective without any additional text, labels, or context. Do not use quotes or formal language.`,
+Return ONLY the rephrased objective without any additional text, labels, or context. Format it as a clear, specific question that addresses the respondent directly.`,
             },
             {
                 role: "user" as const,
@@ -39,7 +39,7 @@ Return ONLY the rephrased objective without any additional text, labels, or cont
 - Make it specific about the knowledge or insights to be gained
 - Focus on what to learn, not how the information will be used
 - Keep it clear and concise, but detailed enough to guide the AI
-- Use a conversational, informal tone
+- Format it as a clear, specific question in second person voice (addressing the respondent directly)
 - Keep it to 1-2 short sentences maximum
 
 Return ONLY the improved version without any additional text or quotes:

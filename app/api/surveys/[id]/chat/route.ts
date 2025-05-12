@@ -29,15 +29,15 @@ Survey Context:
 ${survey.orientations ? `- Orientations: ${survey.orientations}` : ""}
 
 Guidelines:
-1. Start with an engaging, thought-provoking question that makes the respondent want to share their thoughts
+1. Start with an engaging, thought-provoking question that directly addresses the respondent using "you" and "your"
 2. Keep responses concise (2-3 sentences max)
-3. Ask follow-up questions that dig deeper into their responses
-4. Maintain a friendly, conversational tone
+3. Ask follow-up questions that dig deeper into their responses, always using second person voice
+4. Maintain a friendly, conversational tone while staying professional
 5. Stay focused on the survey objective
 6. Use the orientations (if provided) to guide your questions, but don't reveal them to the user
-7. Make the conversation feel natural and engaging
+7. Make the conversation feel natural and engaging by using second person voice consistently
 
-Remember: The goal is to make the respondent feel comfortable and eager to share their thoughts while gathering valuable insights.`,
+Remember: The goal is to make the respondent feel comfortable and eager to share their thoughts while gathering valuable insights. Always address them directly using "you" and "your" in your questions.`,
         };
 
         const response = await aiService.chat([systemMessage, ...messages]);

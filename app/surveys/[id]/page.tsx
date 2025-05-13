@@ -17,7 +17,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Thermometer } from "@/components/thermometer";
-import { MascotColor, MascotEnergy, MascotEyes, MascotMouth, MascotEmote } from '@/app/lib/mascot-constants';
 import { AudioRecorder } from "@/app/components/AudioRecorder";
 import { Loader2 } from "lucide-react";
 
@@ -29,6 +28,7 @@ interface Survey {
   orientations?: string;
   allow_anonymous: boolean;
   first_question?: string;
+  max_questions?: number;
 }
 
 interface Message {
@@ -153,6 +153,7 @@ export default function SurveyResponsePage() {
         const res = await fetch(`/api/surveys/${params.id}`);
         if (res.ok) {
           const data = await res.json();
+          console.log("Survey data received:", data);
           setSurvey(data);
 
           // If we have a response ID, fetch the existing response
@@ -312,12 +313,44 @@ export default function SurveyResponsePage() {
               setInsightExplanation(evaluation.explanation);
             }
             setIsEvaluating(false);
+
+            // Check if we've reached max_questions after the first question
+            const userMessageCount = updatedMessages.filter(msg => msg.role === "user").length;
+            console.log(`User message count: ${userMessageCount}, Max questions: ${survey?.max_questions}`);
+            if (survey?.max_questions && userMessageCount >= survey.max_questions) {
+              console.log("Max questions reached, auto-submitting survey");
+              await handleFinalSubmit();
+            }
           }
         }
       } else {
         // Add user message to chat
         const newMessages = [...messages, { role: "user" as const, content: userMessage }];
         setMessages(newMessages);
+
+        // Count user messages to check if we're at the max_questions limit
+        const userMessageCount = newMessages.filter(msg => msg.role === "user").length;
+        console.log(`User message count: ${userMessageCount}, Max questions: ${survey?.max_questions}`);
+
+        // If we've reached max_questions, auto-submit the survey after adding the user's message
+        if (survey?.max_questions && userMessageCount >= survey.max_questions) {
+          console.log("Max questions reached, auto-submitting survey");
+          // Update the response in the database with the final user message
+          await fetch(`/api/surveys/${params.id}/responses/${currentResponseId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              conversation: newMessages,
+            }),
+          });
+
+          // Submit the survey
+          await handleFinalSubmit();
+          setIsLoading(false);
+          return;
+        }
 
         // Get AI response
         const res = await fetch(`/api/surveys/${params.id}/chat`, {
@@ -368,6 +401,13 @@ export default function SurveyResponsePage() {
             setInsightExplanation(evaluation.explanation);
           }
           setIsEvaluating(false);
+
+          // Check if we need to auto-submit after this exchange
+          // We count user messages again to check if we've reached the limit
+          if (survey?.max_questions && userMessageCount >= survey.max_questions) {
+            console.log("Max questions reached after AI response, auto-submitting survey");
+            await handleFinalSubmit();
+          }
         }
       }
     } catch (error) {

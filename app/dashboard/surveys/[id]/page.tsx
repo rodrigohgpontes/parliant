@@ -5,7 +5,7 @@ import { ExportPDFButton } from "@/components/export-pdf-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSurveyServer } from "@/lib/actions/server-data-actions";
-import { getResponsesServer, updateResponseSummary, updateSurveySummary, toggleSurveyStatus, updateSurveyGuidelines } from "@/lib/actions/server-data-actions";
+import { getResponsesServer, updateResponseSummary, updateSurveySummary, toggleSurveyStatus, updateSurveyGuidelines, markResponseAsCompleted } from "@/lib/actions/server-data-actions";
 import { ArrowLeft, BarChart, Users, Clock, Activity, Sparkles, Copy, Pencil, X, Check } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -288,18 +288,20 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[200px]">Respondent</TableHead>
+                    <TableHead className="w-[180px]">Respondent</TableHead>
                     <TableHead className="w-[100px]">Status</TableHead>
-                    <TableHead className="w-[300px]">Conversation</TableHead>
-                    <TableHead className="w-[300px]">Summary</TableHead>
-                    <TableHead className="w-[150px]">Started</TableHead>
-                    <TableHead className="w-[150px]">Completed</TableHead>
+                    <TableHead className="w-[80px]">User Msgs</TableHead>
+                    <TableHead className="w-[250px]">Conversation</TableHead>
+                    <TableHead className="w-[250px]">Summary</TableHead>
+                    <TableHead className="w-[120px]">Started</TableHead>
+                    <TableHead className="w-[120px]">Completed</TableHead>
+                    <TableHead className="w-[120px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {responses.map((response) => (
                     <TableRow key={response.id}>
-                      <TableCell className="max-w-[200px] truncate">
+                      <TableCell className="max-w-[180px] truncate">
                         {response.respondent_name || response.respondent_email || 'Anonymous'}
                       </TableCell>
                       <TableCell>
@@ -307,10 +309,24 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
                           {response.completed_at ? "Completed" : "In Progress"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="max-w-[300px]">
+                      <TableCell>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                {response.conversation.filter((msg: { role: string; }) => msg.role === 'user').length}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent side="top">
+                              <p>Number of user messages in this conversation</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </TableCell>
+                      <TableCell className="max-w-[250px]">
                         <ConversationCell conversation={response.conversation} />
                       </TableCell>
-                      <TableCell className="max-w-[300px]">
+                      <TableCell className="max-w-[250px]">
                         <SummaryCell
                           summary={response.summary ?? null}
                           conversation={response.conversation}
@@ -323,6 +339,24 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
                       </TableCell>
                       <TableCell>
                         {response.completed_at ? format(new Date(response.completed_at), "PPP") : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {!response.completed_at && (
+                          <form action={async () => {
+                            "use server";
+                            await markResponseAsCompleted(response.id);
+                            revalidatePath(`/dashboard/surveys/${survey.id}`);
+                          }}>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
+                            >
+                              <Check className="h-3.5 w-3.5 mr-1" />
+                              Complete
+                            </Button>
+                          </form>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))}

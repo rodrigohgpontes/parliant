@@ -606,4 +606,44 @@ export async function updateSurveyGuidelines(surveyId: string, guidelines: strin
         SET orientations = ${guidelines}
         WHERE id = ${surveyId}
     `;
+}
+
+export async function markResponseAsCompleted(responseId: string) {
+    const session = await getSession();
+    const user = session?.user;
+
+    if (!user) {
+        throw new Error("Not authenticated");
+    }
+
+    // First get the user's UUID from the users table
+    const userResult = await db`
+        SELECT id FROM users 
+        WHERE auth0_id = ${user.sub}
+    ` as QueryResult<User>;
+
+    if (!userResult?.length) {
+        throw new Error(`User not found in database for auth0_id: ${user.sub}`);
+    }
+
+    const userId = userResult[0].id;
+
+    // Verify that the response belongs to a survey owned by the user
+    const responseResult = await db`
+        SELECT r.survey_id 
+        FROM responses r
+        JOIN surveys s ON r.survey_id = s.id
+        WHERE r.id = ${responseId} AND s.creator_id = ${userId}
+    `;
+
+    if (!responseResult.length) {
+        throw new Error("Response not found or not authorized");
+    }
+
+    // Update the completed_at timestamp
+    await db`
+        UPDATE responses 
+        SET completed_at = CURRENT_TIMESTAMP
+        WHERE id = ${responseId}
+    `;
 } 

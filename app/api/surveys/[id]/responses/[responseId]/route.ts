@@ -36,6 +36,28 @@ export async function PATCH(
             );
         }
 
+        // Check if the response is already completed
+        if (response[0].completed_at && !completed_at) {
+            return NextResponse.json(
+                { error: "This response has already been completed and cannot be modified", completed: true },
+                { status: 403 }
+            );
+        }
+
+        // Check if adding this message would exceed the max_questions limit
+        if (conversation && survey[0].max_questions && !completed_at) {
+            const userMessageCount = conversation.filter((msg: any) => msg.role === 'user').length;
+            const existingUserMessageCount = response[0].conversation.filter((msg: any) => msg.role === 'user').length;
+
+            // If we're adding a new user message and it exceeds the limit
+            if (userMessageCount > existingUserMessageCount && userMessageCount > survey[0].max_questions) {
+                return NextResponse.json(
+                    { error: "Maximum number of questions exceeded", max_reached: true },
+                    { status: 403 }
+                );
+            }
+        }
+
         // Prepare the update data
         const updateData = {
             conversation: conversation ? conversation : response[0].conversation,

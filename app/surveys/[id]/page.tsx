@@ -29,6 +29,7 @@ interface Survey {
   allow_anonymous: boolean;
   first_question?: string;
   max_questions?: number;
+  is_active: boolean;
 }
 
 interface Message {
@@ -139,6 +140,29 @@ export default function SurveyResponsePage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
 
+  // Helper function to count user messages
+  const getUserMessageCount = () => {
+    return messages.filter(msg => msg.role === 'user').length;
+  };
+
+  // Helper function to check if max questions is reached
+  const isMaxQuestionsReached = () => {
+    return survey?.max_questions !== undefined && getUserMessageCount() >= survey.max_questions;
+  };
+
+  // Helper function to check if approaching max questions (80% or more)
+  const isApproachingMaxQuestions = () => {
+    return survey?.max_questions !== undefined &&
+      getUserMessageCount() >= Math.floor(survey.max_questions * 0.8) &&
+      getUserMessageCount() < survey.max_questions;
+  };
+
+  // Helper function to get remaining questions
+  const getRemainingQuestions = () => {
+    if (!survey?.max_questions) return null;
+    return survey.max_questions - getUserMessageCount();
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -167,6 +191,13 @@ export default function SurveyResponsePage() {
                 setIsSubmitted(true);
               }
             }
+            setInitialLoading(false);
+            return;
+          }
+
+          // Check if the survey is active before showing the form
+          if (!data.is_active) {
+            setIsSubmitted(true);
             setInitialLoading(false);
             return;
           }
@@ -206,6 +237,10 @@ export default function SurveyResponsePage() {
             }
             setInitialLoading(false);
           }
+        } else if (res.status === 404) {
+          // Survey not found or not active
+          setIsSubmitted(true);
+          setInitialLoading(false);
         }
       } catch (error) {
         console.error("Error fetching survey:", error);
@@ -218,7 +253,34 @@ export default function SurveyResponsePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isSubmitted) return;
+
+    // Check for conditions that prevent submission
+    if (!input.trim() || isSubmitted || !survey?.is_active) return;
+
+    // Check if we've reached the maximum number of questions
+    if (isMaxQuestionsReached()) {
+      // Instead of returning, show a notification and auto-submit
+      if (currentResponseId) {
+        await handleFinalSubmit();
+      }
+      return;
+    }
+
+    // Check if the response is already completed in a separate API call to ensure we have the latest status
+    if (currentResponseId) {
+      try {
+        const checkRes = await fetch(`/api/surveys/${params.id}/public/responses/${currentResponseId}`);
+        if (checkRes.ok) {
+          const checkData = await checkRes.json();
+          if (checkData.completed_at) {
+            setIsSubmitted(true);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error("Error checking response status:", error);
+      }
+    }
 
     const userMessage = input.trim();
     setInput("");
@@ -293,6 +355,22 @@ export default function SurveyResponsePage() {
               body: JSON.stringify({
                 conversation: updatedMessages,
               }),
+            }).then(async (updateRes) => {
+              // Check if the response was rejected because it's already completed
+              if (updateRes.status === 403) {
+                const errorData = await updateRes.json();
+                if (errorData.completed) {
+                  setIsSubmitted(true);
+                  return;
+                }
+                if (errorData.max_reached) {
+                  // Auto-submit when max questions is reached
+                  await handleFinalSubmit();
+                  return;
+                }
+              }
+            }).catch(error => {
+              console.error("Error updating response:", error);
             });
 
             // Evaluate the conversation insight
@@ -381,6 +459,22 @@ export default function SurveyResponsePage() {
             body: JSON.stringify({
               conversation: updatedMessages,
             }),
+          }).then(async (updateRes) => {
+            // Check if the response was rejected because it's already completed
+            if (updateRes.status === 403) {
+              const errorData = await updateRes.json();
+              if (errorData.completed) {
+                setIsSubmitted(true);
+                return;
+              }
+              if (errorData.max_reached) {
+                // Auto-submit when max questions is reached
+                await handleFinalSubmit();
+                return;
+              }
+            }
+          }).catch(error => {
+            console.error("Error updating response:", error);
           });
 
           // Evaluate the conversation insight after both messages are added
@@ -490,9 +584,13 @@ export default function SurveyResponsePage() {
     return (
       <div className="container max-w-2xl py-12">
         <div className="text-center space-y-4">
-          <h1 className="text-3xl font-bold">Thank You!</h1>
+          <h1 className="text-3xl font-bold">
+            {currentResponseId ? "Thank You!" : "Survey Closed"}
+          </h1>
           <p className="text-muted-foreground">
-            Your response has been submitted successfully.
+            {currentResponseId
+              ? "Your response has been submitted successfully."
+              : "This survey is no longer accepting responses."}
           </p>
           <Link href="/">
             <Button>Return to Home</Button>
@@ -523,8 +621,14 @@ export default function SurveyResponsePage() {
               </div>
             ) : isSubmitted ? (
               <div className="text-center py-12">
-                <h2 className="text-2xl font-semibold mb-4">Thank you for your response!</h2>
-                <p className="text-gray-600 mb-8">Your feedback has been submitted successfully.</p>
+                <h2 className="text-2xl font-semibold mb-4">
+                  {currentResponseId ? "Thank you for your response!" : "This survey is closed"}
+                </h2>
+                <p className="text-gray-600 mb-8">
+                  {currentResponseId
+                    ? "Your feedback has been submitted successfully."
+                    : "This survey is no longer accepting new responses."}
+                </p>
                 <Button
                   onClick={() => window.location.href = '/'}
                   className="text-[14px] sm:text-[15px] font-medium rounded-full"
@@ -547,6 +651,47 @@ export default function SurveyResponsePage() {
                       </div>
                     </div>
                   </div>
+
+                  {!survey.is_active && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                      <p className="text-amber-700 text-sm">
+                        This survey has been closed by the creator. You can view the conversation, but no new responses can be submitted.
+                      </p>
+                    </div>
+                  )}
+
+                  {survey.max_questions && survey.is_active && (
+                    <div className="flex justify-between items-center mb-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">Questions:</span>
+                        <div className="bg-muted rounded-full px-3 py-0.5 text-xs">
+                          <span className={
+                            isMaxQuestionsReached()
+                              ? "text-red-600 font-semibold"
+                              : isApproachingMaxQuestions()
+                                ? "text-amber-600 font-medium"
+                                : "text-blue-600"
+                          }>
+                            {getUserMessageCount()}
+                          </span>
+                          <span> / {survey.max_questions}</span>
+                        </div>
+                      </div>
+                      {(isMaxQuestionsReached() || isApproachingMaxQuestions()) && (
+                        <div className={
+                          isMaxQuestionsReached()
+                            ? "text-red-600 text-xs font-medium"
+                            : "text-amber-700 text-xs"
+                        }
+                        >
+                          {isMaxQuestionsReached()
+                            ? "Maximum questions reached. Please submit your response."
+                            : `Approaching question limit (${getRemainingQuestions()} remaining)`
+                          }
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="space-y-4">
                     {messages.map((message, index) => (
@@ -571,42 +716,52 @@ export default function SurveyResponsePage() {
                   </div>
 
                   <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="relative">
-                      <Textarea
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        placeholder="Type your message..."
-                        className="min-h-[100px] resize-none pr-24"
-                        disabled={isLoading || isSubmitted}
-                      />
-                      <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setShowAudioRecorder(true)}
-                          disabled={isLoading || isSubmitted}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          <Mic className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          type="submit"
-                          disabled={!input.trim() || isLoading || isSubmitted}
-                          className="text-[14px] sm:text-[15px] font-medium rounded-full"
-                        >
-                          {isLoading ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Sending...
-                            </>
-                          ) : (
-                            "Send"
-                          )}
-                        </Button>
-                      </div>
-                    </div>
+                    {(() => {
+                      return (
+                        <div className="relative">
+                          <Textarea
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            placeholder={
+                              !survey.is_active
+                                ? "This survey is no longer accepting responses"
+                                : (isMaxQuestionsReached())
+                                  ? "Maximum questions reached. Please submit your response."
+                                  : "Type your message..."
+                            }
+                            className="min-h-[100px] resize-none pr-24"
+                            disabled={isLoading || isSubmitted || !survey.is_active || isMaxQuestionsReached()}
+                          />
+                          <div className="absolute bottom-3 right-3 flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setShowAudioRecorder(true)}
+                              disabled={isLoading || isSubmitted || !survey.is_active || isMaxQuestionsReached()}
+                              className="text-gray-400 hover:text-gray-600"
+                            >
+                              <Mic className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="submit"
+                              disabled={!input.trim() || isLoading || isSubmitted || !survey.is_active || isMaxQuestionsReached()}
+                              className="text-[14px] sm:text-[15px] font-medium rounded-full"
+                            >
+                              {isLoading ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Sending...
+                                </>
+                              ) : (
+                                "Send"
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </form>
 
                   <div className="flex items-center justify-center w-full">
@@ -619,7 +774,7 @@ export default function SurveyResponsePage() {
                 <div className="flex justify-end mt-6">
                   <Button
                     onClick={handleFinalSubmit}
-                    disabled={isSubmitting || messages.length < 2 || !currentResponseId}
+                    disabled={isSubmitting || messages.length < 2 || !currentResponseId || !survey.is_active}
                     className="text-[14px] sm:text-[15px] font-medium rounded-full"
                   >
                     {isSubmitting ? "Submitting..." : "Submit Survey"}

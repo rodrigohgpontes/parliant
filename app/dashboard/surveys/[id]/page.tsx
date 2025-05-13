@@ -309,7 +309,7 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
                           {response.completed_at ? "Completed" : "In Progress"}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -323,10 +323,10 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
                           </Tooltip>
                         </TooltipProvider>
                       </TableCell>
-                      <TableCell className="max-w-[250px]">
+                      <TableCell className="max-w-[250px] w-[250px]">
                         <ConversationCell conversation={response.conversation} />
                       </TableCell>
-                      <TableCell className="max-w-[250px]">
+                      <TableCell className="max-w-[250px] w-[250px]">
                         <SummaryCell
                           summary={response.summary ?? null}
                           conversation={response.conversation}

@@ -78,9 +78,11 @@ export function SummaryCell({ summary, conversation, responseId, isGenerating = 
                 className="text-left p-0 h-auto hover:bg-transparent w-full"
                 onClick={() => setIsModalOpen(true)}
             >
-                <span className="line-clamp-2 text-ellipsis overflow-hidden">
-                    {summary}
-                </span>
+                <div className="w-full overflow-hidden">
+                    <p className="truncate text-sm text-muted-foreground">
+                        {summary}
+                    </p>
+                </div>
             </Button>
             <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogContent className="max-w-3xl">

@@ -16,7 +16,7 @@ export async function POST(request: Request) {
             model: {
                 name: "gpt-4-turbo-preview",
                 provider: "openai",
-                maxTokens: 4096,
+                maxTokens: 1200,
             },
             temperature: 0.7,
         });

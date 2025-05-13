@@ -18,7 +18,8 @@ export async function analyzeResponse(responseId: number) {
     const content = response[0].data.content;
 
     const completion = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: "gpt-4.1-nano",
+        max_tokens: 300,
         messages: [
             {
                 role: "system",
@@ -92,15 +93,15 @@ export async function getSurveyInsights(surveyId: number) {
 export async function processUnanalyzedResponses() {
     try {
         // Get unanalyzed responses
-        const result = await query(
-            `SELECT id FROM responses 
-       WHERE analysis IS NULL 
-       ORDER BY completed_at ASC 
-       LIMIT 10`
-        );
+        const result = await db`
+            SELECT id FROM responses 
+            WHERE analysis IS NULL 
+            ORDER BY completed_at ASC 
+            LIMIT 10
+        `;
 
         // Process each response
-        for (const row of result.rows) {
+        for (const row of result) {
             try {
                 await analyzeResponse(row.id);
             } catch (error) {

@@ -6,12 +6,6 @@ const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
 });
 
-// TODO: 
-// Add a rate limit to this route
-// Make sure assistant response is not being triggered twice
-// Make sure new assistant response is informed of insight explanation
-
-
 export async function POST(
     req: Request,
     { params }: { params: { id: string; responseId: string; }; }
@@ -37,24 +31,23 @@ export async function POST(
 
         // Ask AI to evaluate the conversation
         const completion = await openai.chat.completions.create({
-            model: "gpt-4",
+            model: "gpt-4.1-nano",
+            max_tokens: 100, // Limit token output for concise response
             messages: [
                 {
                     role: "system",
-                    content: `You are an expert at evaluating the quality and insightfulness of the user answers in a conversation. 
-                    The criteria for insightfulness of the user's answers in the following conversation are:
-                    1. Depth of responses
-                    2. Relevance to the survey objective: ${survey.objective}
-                    3. Quality of insights provided
-                    4. Engagement level
-                    5. Clarity of communication
-                    
-                    Return your evaluation as a JSON object with two fields:
-                    - insight_level: an integer between 0 and 10
-                    - explanation: a brief explanation of the score
-                    
-                    Format your response exactly like this:
-                    {"insight_level": 7, "explanation": "The conversation showed good depth and relevance to the objective, but could have explored more specific insights."}`,
+                    content: `Evaluate the insightfulness of user answers in this conversation based on:
+1. Depth of responses
+2. Relevance to objective: ${survey.objective}
+3. Quality of insights
+4. Engagement level
+5. Communication clarity
+
+Return only JSON with:
+- insight_level: integer 0-10
+- explanation: brief explanation (max 20 words)
+
+Example: {"insight_level": 7, "explanation": "Good depth on main topics, but missed opportunities for specific details."}`,
                 },
                 {
                     role: "user",

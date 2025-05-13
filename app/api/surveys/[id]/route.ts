@@ -6,13 +6,13 @@ export async function GET(
     request: Request,
     { params }: { params: { id: string; }; }
 ) {
-    const surveyId = await params.id;
+    const surveyId = params.id;
 
     try {
         const result = await db`
-            SELECT id, objective, orientations, allow_anonymous, first_question, max_questions
+            SELECT id, objective, orientations, allow_anonymous, first_question, max_questions, max_characters, is_active
             FROM surveys 
-            WHERE id = ${surveyId} AND is_active = true
+            WHERE id = ${surveyId}
         `;
 
         if (!result?.length) {
@@ -33,7 +33,7 @@ export async function PUT(
     request: Request,
     { params }: { params: { id: string; }; }
 ) {
-    const surveyId = await params.id;
+    const surveyId = params.id;
 
     try {
         const formData = await request.formData();
@@ -48,7 +48,7 @@ export async function DELETE(
     request: Request,
     { params }: { params: { id: string; }; }
 ) {
-    const surveyId = await params.id;
+    const surveyId = params.id;
 
     try {
         await deleteAuthenticatedSurvey(surveyId);

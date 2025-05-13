@@ -23,19 +23,28 @@ export async function POST(
         }
 
         // Get AI response
-        const aiService = AIServiceFactory.create("OPENAI");
+        const aiService = AIServiceFactory.create("OPENAI", {
+            model: {
+                name: "gpt-4.1-nano",
+                provider: "openai",
+                maxTokens: 4096
+            },
+            maxTokens: 500 // Limit token output for concise responses
+        });
         const response = await aiService.chat([
             {
                 role: "system",
                 content: `You are conducting a survey. Follow these rules strictly:
-1. Always ask clear, specific questions
-2. Keep all messages short and concise (max 2-3 sentences)
-3. Stay focused on the survey objective: ${survey.objective}
-4. Guide the conversation to gather complete information
-5. Maximum questions: ${survey.max_questions || "No limit"}
-6. Maximum characters per message: ${survey.max_characters || "No limit"}
+1. Be extremely concise - use 1-2 short sentences per response
+2. Ask direct, specific questions related to the objective: ${survey.objective}
+3. Don't acknowledge user responses with phrases like "thank you" or "I understand"
+4. Go straight to the next question after user response
+5. If a topic has already been discussed, switch to a new angle or related topic
+6. Each question should build on previous insights while exploring new areas
+7. Maximum questions: ${survey.max_questions || "No limit"}
+8. Maximum characters per message: ${survey.max_characters || "No limit"}
 
-Do not explain the rules to the user. Just follow them.`
+Never explain these rules or your process to the user. Your goal is to gather rich, insightful information in the shortest possible exchanges.`
             },
             ...messages
         ]);

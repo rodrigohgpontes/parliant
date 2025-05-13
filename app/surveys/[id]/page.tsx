@@ -29,6 +29,7 @@ interface Survey {
   allow_anonymous: boolean;
   first_question?: string;
   max_questions?: number;
+  max_characters?: number;
   is_active: boolean;
 }
 
@@ -163,6 +164,17 @@ export default function SurveyResponsePage() {
     return survey.max_questions - getUserMessageCount();
   };
 
+  // Helper function to check if character limit is reached or exceeded
+  const isOverCharacterLimit = () => {
+    return survey?.max_characters !== undefined && input.length > survey.max_characters;
+  };
+
+  // Helper function to get remaining characters
+  const getRemainingCharacters = () => {
+    if (!survey?.max_characters) return null;
+    return survey.max_characters - input.length;
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -197,6 +209,7 @@ export default function SurveyResponsePage() {
 
           // Check if the survey is active before showing the form
           if (!data.is_active) {
+            console.log("Survey is not active, showing closed message");
             setIsSubmitted(true);
             setInitialLoading(false);
             return;
@@ -238,7 +251,8 @@ export default function SurveyResponsePage() {
             setInitialLoading(false);
           }
         } else if (res.status === 404) {
-          // Survey not found or not active
+          // Survey not found
+          console.log("Survey not found, showing closed message");
           setIsSubmitted(true);
           setInitialLoading(false);
         }
@@ -263,6 +277,11 @@ export default function SurveyResponsePage() {
       if (currentResponseId) {
         await handleFinalSubmit();
       }
+      return;
+    }
+
+    // Check if we've exceeded the character limit
+    if (isOverCharacterLimit()) {
       return;
     }
 
@@ -368,6 +387,13 @@ export default function SurveyResponsePage() {
                   await handleFinalSubmit();
                   return;
                 }
+                if (errorData.character_limit_exceeded) {
+                  // Handle character limit exceeded error
+                  alert(`Message exceeds character limit of ${errorData.max_characters} characters.`);
+                  // Remove the last message that caused the error
+                  setMessages(messages);
+                  return;
+                }
               }
             }).catch(error => {
               console.error("Error updating response:", error);
@@ -399,6 +425,15 @@ export default function SurveyResponsePage() {
               console.log("Max questions reached, auto-submitting survey");
               await handleFinalSubmit();
             }
+          }
+        } else if (res.status === 403) {
+          // Handle error responses
+          const errorData = await res.json();
+          if (errorData.character_limit_exceeded) {
+            alert(`Message exceeds character limit of ${errorData.max_characters} characters.`);
+            // Revert to previous messages state
+            setMessages(messages);
+            return;
           }
         }
       } else {
@@ -470,6 +505,13 @@ export default function SurveyResponsePage() {
               if (errorData.max_reached) {
                 // Auto-submit when max questions is reached
                 await handleFinalSubmit();
+                return;
+              }
+              if (errorData.character_limit_exceeded) {
+                // Handle character limit exceeded error
+                alert(`Message exceeds character limit of ${errorData.max_characters} characters.`);
+                // Remove the last message that caused the error
+                setMessages(messages);
                 return;
               }
             }
@@ -576,6 +618,15 @@ export default function SurveyResponsePage() {
   };
 
   const handleTranscriptionComplete = (text: string) => {
+    // If there's a character limit and the transcribed text exceeds it, truncate the text
+    if (survey?.max_characters && text.length > survey.max_characters) {
+      // Truncate to the max character limit
+      text = text.substring(0, survey.max_characters);
+
+      // Show a notification to the user
+      alert(`Your transcribed message has been truncated to the maximum ${survey.max_characters} characters allowed.`);
+    }
+
     setInput(text);
     setShowAudioRecorder(false);
   };
@@ -693,6 +744,20 @@ export default function SurveyResponsePage() {
                     </div>
                   )}
 
+                  {/* Character limit indicator */}
+                  {survey.max_characters && survey.is_active && (
+                    <div className="flex justify-end items-center mb-2">
+                      <div className={`text-xs ${isOverCharacterLimit()
+                        ? "text-red-600 font-semibold"
+                        : input.length > survey.max_characters * 0.8
+                          ? "text-amber-600"
+                          : "text-gray-500"
+                        }`}>
+                        {input.length} / {survey.max_characters} characters
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-4">
                     {messages.map((message, index) => (
                       <div
@@ -728,9 +793,12 @@ export default function SurveyResponsePage() {
                                 ? "This survey is no longer accepting responses"
                                 : (isMaxQuestionsReached())
                                   ? "Maximum questions reached. Please submit your response."
-                                  : "Type your message..."
+                                  : survey.max_characters
+                                    ? `Type your message... (Max ${survey.max_characters} characters)`
+                                    : "Type your message..."
                             }
-                            className="min-h-[100px] resize-none pr-24"
+                            maxLength={survey.max_characters}
+                            className={`min-h-[100px] resize-none pr-24 ${isOverCharacterLimit() ? 'border-red-500 focus:ring-red-500' : ''}`}
                             disabled={isLoading || isSubmitted || !survey.is_active || isMaxQuestionsReached()}
                           />
                           <div className="absolute bottom-3 right-3 flex items-center gap-2">
@@ -746,7 +814,7 @@ export default function SurveyResponsePage() {
                             </Button>
                             <Button
                               type="submit"
-                              disabled={!input.trim() || isLoading || isSubmitted || !survey.is_active || isMaxQuestionsReached()}
+                              disabled={!input.trim() || isLoading || isSubmitted || !survey.is_active || isMaxQuestionsReached() || isOverCharacterLimit()}
                               className="text-[14px] sm:text-[15px] font-medium rounded-full"
                             >
                               {isLoading ? (
@@ -759,6 +827,11 @@ export default function SurveyResponsePage() {
                               )}
                             </Button>
                           </div>
+                          {isOverCharacterLimit() && (
+                            <div className="text-red-600 text-xs mt-1">
+                              Your message exceeds the maximum character limit.
+                            </div>
+                          )}
                         </div>
                       );
                     })()}

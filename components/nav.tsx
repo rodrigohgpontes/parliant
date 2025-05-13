@@ -2,7 +2,6 @@
 
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { useUser } from "@auth0/nextjs-auth0";
 
 export function Navigation() {
@@ -10,7 +9,6 @@ export function Navigation() {
 
     return (
         <div className="hidden md:flex items-center gap-4">
-            <ThemeToggle />
             {isLoading ? null : user ? (
                 <>
                     <Link href="/dashboard">

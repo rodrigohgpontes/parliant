@@ -17,8 +17,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Thermometer } from "@/components/thermometer";
-import { Parly } from "@/components/parly";
-import Mascot from '@/app/components/Mascot';
 import { MascotColor, MascotEnergy, MascotEyes, MascotMouth, MascotEmote } from '@/app/lib/mascot-constants';
 import { AudioRecorder } from "@/app/components/AudioRecorder";
 import { Loader2 } from "lucide-react";
@@ -48,77 +46,77 @@ const LoadingDots = () => {
   );
 };
 
-function getParlyMood(insightLevel: number, explanation: string | null) {
-  // Default to neutral state
-  let color: MascotColor = "blue";
-  let energy: MascotEnergy = "neutral";
-  let eyes: MascotEyes = "tense";
-  let mouth: MascotMouth = "happy";
-  let emote: MascotEmote | undefined = undefined;
+// function getParlyMood(insightLevel: number, explanation: string | null) {
+//   // Default to neutral state
+//   let color: MascotColor = "blue";
+//   let energy: MascotEnergy = "neutral";
+//   let eyes: MascotEyes = "tense";
+//   let mouth: MascotMouth = "happy";
+//   let emote: MascotEmote | undefined = undefined;
 
-  // Determine color based on insight level
-  if (insightLevel >= 8) {
-    color = "green";
-  } else if (insightLevel >= 6) {
-    color = "blue";
-  } else if (insightLevel >= 4) {
-    color = "yellow";
-  } else {
-    color = "red";
-  }
+//   // Determine color based on insight level
+//   if (insightLevel >= 8) {
+//     color = "green";
+//   } else if (insightLevel >= 6) {
+//     color = "blue";
+//   } else if (insightLevel >= 4) {
+//     color = "yellow";
+//   } else {
+//     color = "red";
+//   }
 
-  // Determine energy level
-  if (insightLevel >= 8) {
-    energy = "very_high";
-  } else if (insightLevel >= 6) {
-    energy = "high";
-  } else if (insightLevel >= 4) {
-    energy = "neutral";
-  } else if (insightLevel >= 2) {
-    energy = "low";
-  } else {
-    energy = "very_low";
-  }
+//   // Determine energy level
+//   if (insightLevel >= 8) {
+//     energy = "very_high";
+//   } else if (insightLevel >= 6) {
+//     energy = "high";
+//   } else if (insightLevel >= 4) {
+//     energy = "neutral";
+//   } else if (insightLevel >= 2) {
+//     energy = "low";
+//   } else {
+//     energy = "very_low";
+//   }
 
-  // Determine facial expression
-  if (insightLevel >= 8) {
-    eyes = "absent";
-    mouth = "happy";
-    emote = "heart";
-  } else if (insightLevel >= 6) {
-    eyes = "uninstered";
-    mouth = "happy";
-  } else if (insightLevel >= 4) {
-    eyes = "tense";
-    mouth = "happy";
-    emote = "thinking";
-  } else if (insightLevel >= 2) {
-    eyes = "uncomfortable";
-    mouth = "happy";
-    emote = "confused";
-  } else {
-    eyes = "sad";
-    mouth = "happy";
-  }
+//   // Determine facial expression
+//   if (insightLevel >= 8) {
+//     eyes = "absent";
+//     mouth = "happy";
+//     emote = "heart";
+//   } else if (insightLevel >= 6) {
+//     eyes = "uninstered";
+//     mouth = "happy";
+//   } else if (insightLevel >= 4) {
+//     eyes = "tense";
+//     mouth = "happy";
+//     emote = "thinking";
+//   } else if (insightLevel >= 2) {
+//     eyes = "uncomfortable";
+//     mouth = "happy";
+//     emote = "confused";
+//   } else {
+//     eyes = "sad";
+//     mouth = "happy";
+//   }
 
-  return { color, energy, eyes, mouth, emote };
-}
+//   return { color, energy, eyes, mouth, emote };
+// }
 
-function getRandomParlyMood() {
-  const colors: MascotColor[] = ["blue", "green", "red", "yellow"];
-  const energies: MascotEnergy[] = ["very_low", "low", "neutral", "high", "very_high"];
-  const eyes: MascotEyes[] = ["tense", "absent", "uninstered", "sad", "uncomfortable", "angry", "suspicious", "judgemental", "determined", "crazy", "bored"];
-  const mouths: MascotMouth[] = ["happy", "unresponsive", "sad", "quiet", "suffering", "smirky", "tense", "nervous", "overwhelmed", "cute", "shocked", "disappointed", "joyful", "scared", "uncomfortable", "embarassed", "frown", "surprised", "regret", "fun"];
-  const emotes: MascotEmote[] = ["thinking", "heart", "confused"];
+// function getRandomParlyMood() {
+//   const colors: MascotColor[] = ["blue", "green", "red", "yellow"];
+//   const energies: MascotEnergy[] = ["very_low", "low", "neutral", "high", "very_high"];
+//   const eyes: MascotEyes[] = ["tense", "absent", "uninstered", "sad", "uncomfortable", "angry", "suspicious", "judgemental", "determined", "crazy", "bored"];
+//   const mouths: MascotMouth[] = ["happy", "unresponsive", "sad", "quiet", "suffering", "smirky", "tense", "nervous", "overwhelmed", "cute", "shocked", "disappointed", "joyful", "scared", "uncomfortable", "embarassed", "frown", "surprised", "regret", "fun"];
+//   const emotes: MascotEmote[] = ["thinking", "heart", "confused"];
 
-  return {
-    color: colors[Math.floor(Math.random() * colors.length)],
-    energy: energies[Math.floor(Math.random() * energies.length)],
-    eyes: eyes[Math.floor(Math.random() * eyes.length)],
-    mouth: mouths[Math.floor(Math.random() * mouths.length)],
-    emote: Math.random() > 0.3 ? emotes[Math.floor(Math.random() * emotes.length)] : undefined
-  };
-}
+//   return {
+//     color: colors[Math.floor(Math.random() * colors.length)],
+//     energy: energies[Math.floor(Math.random() * energies.length)],
+//     eyes: eyes[Math.floor(Math.random() * eyes.length)],
+//     mouth: mouths[Math.floor(Math.random() * mouths.length)],
+//     emote: Math.random() > 0.3 ? emotes[Math.floor(Math.random() * emotes.length)] : undefined
+//   };
+// }
 
 export default function SurveyResponsePage() {
   const params = useParams();
@@ -139,8 +137,6 @@ export default function SurveyResponsePage() {
   const [insightExplanation, setInsightExplanation] = useState<string | null>(null);
   const [isEvaluating, setIsEvaluating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [randomMood, setRandomMood] = useState(getRandomParlyMood());
-  const [parlyMood, setParlyMood] = useState(getParlyMood(insightLevel, insightExplanation));
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
 
   const scrollToBottom = () => {
@@ -218,10 +214,6 @@ export default function SurveyResponsePage() {
 
     fetchSurvey();
   }, [params.id, responseId]);
-
-  useEffect(() => {
-    setParlyMood(getParlyMood(insightLevel, insightExplanation));
-  }, [insightLevel, insightExplanation]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -449,10 +441,6 @@ export default function SurveyResponsePage() {
     }
   };
 
-  const handleRandomize = () => {
-    setRandomMood(getRandomParlyMood());
-  };
-
   const handleTranscriptionComplete = (text: string) => {
     setInput(text);
     setShowAudioRecorder(false);
@@ -517,22 +505,7 @@ export default function SurveyResponsePage() {
                           <div className="w-full h-full rounded-full bg-green-500"></div>
                         </div>
                       </div>
-                      <div>
-                        <h1 className="text-lg font-semibold">Parly</h1>
-                        <p className="text-sm text-gray-500">
-                          {parlyMood.color} {parlyMood.energy} {parlyMood.eyes} {parlyMood.mouth}
-                          {parlyMood.emote ? ` ${parlyMood.emote}` : ''}
-                        </p>
-                      </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleRandomize}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
                   </div>
 
                   <div className="space-y-4">

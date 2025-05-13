@@ -5,8 +5,8 @@ import { ExportPDFButton } from "@/components/export-pdf-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSurveyServer } from "@/lib/actions/server-data-actions";
-import { getResponsesServer, updateResponseSummary, updateSurveySummary, toggleSurveyStatus, updateSurveyGuidelines, markResponseAsCompleted } from "@/lib/actions/server-data-actions";
-import { ArrowLeft, BarChart, Users, Clock, Activity, Sparkles, Copy, Pencil, X, Check } from "lucide-react";
+import { getResponsesServer, updateResponseSummary, updateSurveySummary, toggleSurveyStatus, updateSurveyGuidelines, markResponseAsCompleted, toggleResponseValidStatus } from "@/lib/actions/server-data-actions";
+import { ArrowLeft, BarChart, Users, Clock, Activity, Sparkles, Copy, Pencil, X, Check, AlertTriangle, Ban } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -28,6 +28,9 @@ import { CopyButton } from "@/components/copy-button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Textarea } from "@/components/ui/textarea";
 import { EditableGuidelines } from "@/components/editable-guidelines";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { ResponseToggleSwitch } from "@/components/response-toggle-switch";
 
 interface PageProps {
   params: Promise<{
@@ -171,28 +174,30 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold">Survey Summary</h2>
-          <form action={async () => {
-            "use server";
-            const currentResponses = await getResponsesServer(survey.id);
-            const allResponseSummaries = currentResponses
-              .filter(r => r.completed_at && r.summary)
-              .map(r => r.summary!);
+          {survey.survey_summary && (
+            <form action={async () => {
+              "use server";
+              const currentResponses = await getResponsesServer(survey.id);
+              const allResponseSummaries = currentResponses
+                .filter(r => r.completed_at && r.summary && !r.is_invalid)
+                .map(r => r.summary!);
 
-            const summary = await generateSurveySummary(
-              survey.objective,
-              survey.orientations,
-              allResponseSummaries
-            );
-            if (summary) {
-              await updateSurveySummary(survey.id, summary);
-              revalidatePath(`/dashboard/surveys/${survey.id}`);
-            }
-          }}>
-            <Button variant="outline" size="sm">
-              <Sparkles className="mr-2 h-4 w-4" />
-              Regenerate Summary
-            </Button>
-          </form>
+              const summary = await generateSurveySummary(
+                survey.objective,
+                survey.orientations,
+                allResponseSummaries
+              );
+              if (summary) {
+                await updateSurveySummary(survey.id, summary);
+                revalidatePath(`/dashboard/surveys/${survey.id}`);
+              }
+            }}>
+              <Button variant="outline" size="sm">
+                <Sparkles className="mr-2 h-4 w-4" />
+                Regenerate Summary
+              </Button>
+            </form>
+          )}
         </div>
         {survey.survey_summary ? (
           <div className="bg-muted/50 rounded-lg p-6">
@@ -213,7 +218,8 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
                   // Find completed responses without summaries
                   const responsesToProcess = currentResponses.filter(r =>
                     r.completed_at && // Only completed responses
-                    !r.summary // Only those without a summary
+                    !r.summary && // Only those without a summary
+                    !r.is_invalid // Only valid responses
                   );
 
                   // Generate summaries for each response
@@ -228,7 +234,7 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
 
                   // Collect all response summaries (including newly generated ones)
                   const allResponseSummaries = currentResponses
-                    .filter(r => r.completed_at && r.summary)
+                    .filter(r => r.completed_at && r.summary && !r.is_invalid)
                     .map(r => r.summary!);
 
                   // Generate the survey summary using the response summaries
@@ -288,20 +294,24 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[180px]">Respondent</TableHead>
-                    <TableHead className="w-[100px]">Status</TableHead>
-                    <TableHead className="w-[80px]">User Msgs</TableHead>
-                    <TableHead className="w-[250px]">Conversation</TableHead>
-                    <TableHead className="w-[250px]">Summary</TableHead>
-                    <TableHead className="w-[120px]">Started</TableHead>
-                    <TableHead className="w-[120px]">Completed</TableHead>
-                    <TableHead className="w-[120px]">Actions</TableHead>
+                    <TableHead className="w-[160px]">Respondent</TableHead>
+                    <TableHead className="w-[80px]">Status</TableHead>
+                    <TableHead className="w-[60px]">User Msgs</TableHead>
+                    <TableHead className="w-[230px]">Conversation</TableHead>
+                    <TableHead className="w-[230px]">Summary</TableHead>
+                    <TableHead className="w-[100px]">Started</TableHead>
+                    <TableHead className="w-[100px]">Completed</TableHead>
+                    <TableHead className="w-[80px]">Valid</TableHead>
+                    <TableHead className="w-[140px]">Controls</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {responses.map((response) => (
-                    <TableRow key={response.id}>
-                      <TableCell className="max-w-[180px] truncate">
+                    <TableRow
+                      key={response.id}
+                      className={response.is_invalid ? "bg-red-50/50" : undefined}
+                    >
+                      <TableCell className="max-w-[160px] truncate">
                         {response.respondent_name || response.respondent_email || 'Anonymous'}
                       </TableCell>
                       <TableCell>
@@ -323,10 +333,10 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
                           </Tooltip>
                         </TooltipProvider>
                       </TableCell>
-                      <TableCell className="max-w-[250px] w-[250px]">
+                      <TableCell className="max-w-[230px] w-[230px]">
                         <ConversationCell conversation={response.conversation} />
                       </TableCell>
-                      <TableCell className="max-w-[250px] w-[250px]">
+                      <TableCell className="max-w-[230px] w-[230px]">
                         <SummaryCell
                           summary={response.summary ?? null}
                           conversation={response.conversation}
@@ -340,23 +350,75 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
                       <TableCell>
                         {response.completed_at ? format(new Date(response.completed_at), "PPP") : '-'}
                       </TableCell>
-                      <TableCell>
-                        {!response.completed_at && (
-                          <form action={async () => {
-                            "use server";
-                            await markResponseAsCompleted(response.id);
-                            revalidatePath(`/dashboard/surveys/${survey.id}`);
-                          }}>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="bg-green-50 hover:bg-green-100 text-green-700 border-green-200"
-                            >
-                              <Check className="h-3.5 w-3.5 mr-1" />
-                              Complete
-                            </Button>
-                          </form>
-                        )}
+                      <TableCell className="text-center">
+                        <Badge
+                          variant={response.is_invalid ? "destructive" : "default"}
+                          className={response.is_invalid
+                            ? "bg-red-100 text-red-700 hover:bg-red-200"
+                            : "bg-green-100 text-green-700 hover:bg-green-200"
+                          }
+                        >
+                          {response.is_invalid ? "Invalid" : "Valid"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="bg-gray-50/50 border-l">
+                        <div className="space-y-3 py-1 px-2">
+                          <div className="flex items-center justify-between space-x-2">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Label
+                                    htmlFor={`completed-${response.id}`}
+                                    className="text-xs font-medium cursor-help"
+                                  >
+                                    Completed
+                                  </Label>
+                                </TooltipTrigger>
+                                <TooltipContent side="left">
+                                  <p>Toggle to mark this response as completed or incomplete</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <ResponseToggleSwitch
+                              id={`completed-${response.id}`}
+                              checked={!!response.completed_at}
+                              formAction={async () => {
+                                "use server";
+                                await markResponseAsCompleted(response.id);
+                                revalidatePath(`/dashboard/surveys/${survey.id}`);
+                              }}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between space-x-2">
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Label
+                                    htmlFor={`valid-${response.id}`}
+                                    className="text-xs font-medium cursor-help"
+                                  >
+                                    Valid
+                                  </Label>
+                                </TooltipTrigger>
+                                <TooltipContent side="left">
+                                  <p>Toggle to mark this response as valid or invalid</p>
+                                  <p className="text-xs text-muted-foreground mt-1">Invalid responses are excluded from summaries</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                            <ResponseToggleSwitch
+                              id={`valid-${response.id}`}
+                              checked={!response.is_invalid}
+                              color="red"
+                              formAction={async () => {
+                                "use server";
+                                await toggleResponseValidStatus(response.id);
+                                revalidatePath(`/dashboard/surveys/${survey.id}`);
+                              }}
+                            />
+                          </div>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

@@ -2,7 +2,6 @@
 
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth0";
-import { Survey, User, Response } from "@/lib/types";
 import { QueryResult } from "neon/serverless";
 
 interface Survey {
@@ -43,6 +42,7 @@ interface Response {
     completed_at?: Date;
     deleted_at?: Date;
     created_at: Date;
+    is_invalid?: boolean;
 }
 
 export async function getSurveysServer(): Promise<Survey[]> {
@@ -335,7 +335,11 @@ export async function updateSurveySummary(surveyId: string, summary: string) {
     `;
 }
 
-export async function exportResponsesToCSV(surveyId: string): Promise<string> {
+export async function exportResponsesToCSV(
+    surveyId: string,
+    includeInvalid: boolean = true,
+    includeIncomplete: boolean = true
+): Promise<string> {
     const session = await getSession();
     const user = session?.user;
 
@@ -365,49 +369,94 @@ export async function exportResponsesToCSV(surveyId: string): Promise<string> {
         throw new Error("Survey not found or not authorized");
     }
 
-    const responses = await db`
-        SELECT * FROM responses 
-        WHERE survey_id = ${surveyId} AND deleted_at IS NULL
-        ORDER BY created_at DESC
-    ` as QueryResult<Response>;
+    // Get responses, optionally filtering out invalid and/or incomplete ones
+    let query = '';
 
-    // Convert responses to CSV format
-    const headers = [
-        "Response ID",
-        "Respondent Name",
-        "Respondent Email",
-        "Status",
-        "Started At",
-        "Completed At",
-        "Summary",
-        "Tags",
-        "Conversation"
-    ].join(",");
+    if (!includeInvalid && !includeIncomplete) {
+        const responses = await db`
+            SELECT * FROM responses 
+            WHERE survey_id = ${surveyId} 
+            AND deleted_at IS NULL
+            AND (is_invalid IS NULL OR is_invalid = false)
+            AND completed_at IS NOT NULL
+            ORDER BY created_at DESC
+        ` as QueryResult<Response>;
+        return formatCSV(responses);
+    } else if (!includeInvalid) {
+        const responses = await db`
+            SELECT * FROM responses 
+            WHERE survey_id = ${surveyId} 
+            AND deleted_at IS NULL
+            AND (is_invalid IS NULL OR is_invalid = false)
+            ORDER BY created_at DESC
+        ` as QueryResult<Response>;
+        return formatCSV(responses);
+    } else if (!includeIncomplete) {
+        const responses = await db`
+            SELECT * FROM responses 
+            WHERE survey_id = ${surveyId} 
+            AND deleted_at IS NULL
+            AND completed_at IS NOT NULL
+            ORDER BY created_at DESC
+        ` as QueryResult<Response>;
+        return formatCSV(responses);
+    } else {
+        const responses = await db`
+            SELECT * FROM responses 
+            WHERE survey_id = ${surveyId} 
+            AND deleted_at IS NULL
+            ORDER BY created_at DESC
+        ` as QueryResult<Response>;
+        return formatCSV(responses);
+    }
 
-    const rows = responses.map(response => {
-        const status = response.completed_at ? "Completed" : "In Progress";
-        const startedAt = new Date(response.created_at).toISOString();
-        const completedAt = response.completed_at ? new Date(response.completed_at).toISOString() : "";
-        const tags = response.tags ? response.tags.join(";") : "";
-        const conversation = JSON.stringify(response.conversation);
+    // Helper function to format responses as CSV
+    function formatCSV(responses: Response[]) {
+        // Convert responses to CSV format
+        const headers = [
+            "Response ID",
+            "Respondent Name",
+            "Respondent Email",
+            "Status",
+            "Valid",
+            "Started At",
+            "Completed At",
+            "Summary",
+            "Tags",
+            "Conversation"
+        ].join(",");
 
-        return [
-            response.id,
-            response.respondent_name || "",
-            response.respondent_email || "",
-            status,
-            startedAt,
-            completedAt,
-            response.summary || "",
-            tags,
-            conversation
-        ].map(field => `"${field.replace(/"/g, '""')}"`).join(",");
-    });
+        const rows = responses.map(response => {
+            const status = response.completed_at ? "Completed" : "In Progress";
+            const isValid = response.is_invalid ? "Invalid" : "Valid";
+            const startedAt = new Date(response.created_at).toISOString();
+            const completedAt = response.completed_at ? new Date(response.completed_at).toISOString() : "";
+            const tags = response.tags ? response.tags.join(";") : "";
+            const conversation = JSON.stringify(response.conversation);
 
-    return [headers, ...rows].join("\n");
+            return [
+                response.id,
+                response.respondent_name || "",
+                response.respondent_email || "",
+                status,
+                isValid,
+                startedAt,
+                completedAt,
+                response.summary || "",
+                tags,
+                conversation
+            ].map(field => `"${field.replace(/"/g, '""')}"`).join(",");
+        });
+
+        return [headers, ...rows].join("\n");
+    }
 }
 
-export async function exportSurveyToPDF(surveyId: string): Promise<Buffer> {
+export async function exportSurveyToPDF(
+    surveyId: string,
+    includeInvalid: boolean = true,
+    includeIncomplete: boolean = true
+): Promise<Buffer> {
     const session = await getSession();
     const user = session?.user;
 
@@ -438,11 +487,43 @@ export async function exportSurveyToPDF(surveyId: string): Promise<Buffer> {
     }
 
     const survey = surveyResult[0];
-    const responses = await db`
-        SELECT * FROM responses 
-        WHERE survey_id = ${surveyId} AND deleted_at IS NULL
-        ORDER BY created_at DESC
-    ` as QueryResult<Response>;
+
+    // Get responses, optionally filtering out invalid and/or incomplete ones
+    let responses;
+
+    if (!includeInvalid && !includeIncomplete) {
+        responses = await db`
+            SELECT * FROM responses 
+            WHERE survey_id = ${surveyId} 
+            AND deleted_at IS NULL
+            AND (is_invalid IS NULL OR is_invalid = false)
+            AND completed_at IS NOT NULL
+            ORDER BY created_at DESC
+        ` as QueryResult<Response>;
+    } else if (!includeInvalid) {
+        responses = await db`
+            SELECT * FROM responses 
+            WHERE survey_id = ${surveyId} 
+            AND deleted_at IS NULL
+            AND (is_invalid IS NULL OR is_invalid = false)
+            ORDER BY created_at DESC
+        ` as QueryResult<Response>;
+    } else if (!includeIncomplete) {
+        responses = await db`
+            SELECT * FROM responses 
+            WHERE survey_id = ${surveyId} 
+            AND deleted_at IS NULL
+            AND completed_at IS NOT NULL
+            ORDER BY created_at DESC
+        ` as QueryResult<Response>;
+    } else {
+        responses = await db`
+            SELECT * FROM responses 
+            WHERE survey_id = ${surveyId} 
+            AND deleted_at IS NULL
+            ORDER BY created_at DESC
+        ` as QueryResult<Response>;
+    }
 
     // Create PDF document
     const PDFDocument = (await import('pdfkit')).default;
@@ -487,6 +568,7 @@ export async function exportSurveyToPDF(surveyId: string): Promise<Buffer> {
         doc.fontSize(14).text(`Response ${index + 1}`, { underline: true });
         doc.fontSize(12).text(`Respondent: ${response.respondent_name || response.respondent_email || 'Anonymous'}`);
         doc.text(`Status: ${response.completed_at ? 'Completed' : 'In Progress'}`);
+        doc.text(`Validity: ${response.is_invalid ? 'Invalid' : 'Valid'}`);
         doc.text(`Started: ${new Date(response.created_at).toLocaleString()}`);
         if (response.completed_at) {
             doc.text(`Completed: ${new Date(response.completed_at).toLocaleString()}`);
@@ -630,7 +712,7 @@ export async function markResponseAsCompleted(responseId: string) {
 
     // Verify that the response belongs to a survey owned by the user
     const responseResult = await db`
-        SELECT r.survey_id 
+        SELECT r.survey_id, r.completed_at
         FROM responses r
         JOIN surveys s ON r.survey_id = s.id
         WHERE r.id = ${responseId} AND s.creator_id = ${userId}
@@ -641,9 +723,59 @@ export async function markResponseAsCompleted(responseId: string) {
     }
 
     // Update the completed_at timestamp
+    if (responseResult[0].completed_at) {
+        // If already completed, set to null (uncomplete)
+        await db`
+            UPDATE responses 
+            SET completed_at = NULL
+            WHERE id = ${responseId}
+        `;
+    } else {
+        // If not completed, set current timestamp
+        await db`
+            UPDATE responses 
+            SET completed_at = CURRENT_TIMESTAMP
+            WHERE id = ${responseId}
+        `;
+    }
+}
+
+export async function toggleResponseValidStatus(responseId: string) {
+    const session = await getSession();
+    const user = session?.user;
+
+    if (!user) {
+        throw new Error("Not authenticated");
+    }
+
+    // First get the user's UUID from the users table
+    const userResult = await db`
+        SELECT id FROM users 
+        WHERE auth0_id = ${user.sub}
+    ` as QueryResult<User>;
+
+    if (!userResult?.length) {
+        throw new Error(`User not found in database for auth0_id: ${user.sub}`);
+    }
+
+    const userId = userResult[0].id;
+
+    // Verify that the response belongs to a survey owned by the user
+    const responseResult = await db`
+        SELECT r.survey_id, r.is_invalid
+        FROM responses r
+        JOIN surveys s ON r.survey_id = s.id
+        WHERE r.id = ${responseId} AND s.creator_id = ${userId}
+    `;
+
+    if (!responseResult.length) {
+        throw new Error("Response not found or not authorized");
+    }
+
+    // Toggle the is_invalid status
     await db`
         UPDATE responses 
-        SET completed_at = CURRENT_TIMESTAMP
+        SET is_invalid = NOT COALESCE(is_invalid, false)
         WHERE id = ${responseId}
     `;
 } 

@@ -4,6 +4,13 @@ import { db } from "@/lib/db/index";
 import { CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  robots: 'noindex, nofollow',
+  title: 'Thank You - Parliant.AI',
+  description: 'Thank you for completing the survey'
+};
 
 export default async function ThankYouPage({
   params,

@@ -19,6 +19,7 @@ import { Label } from "@/components/ui/label";
 import { Thermometer } from "@/components/thermometer";
 import { AudioRecorder } from "@/app/components/AudioRecorder";
 import { Loader2 } from "lucide-react";
+import type { Metadata } from "next";
 
 interface Survey {
   id: string;
@@ -119,6 +120,12 @@ const LoadingDots = () => {
 //     emote: Math.random() > 0.3 ? emotes[Math.floor(Math.random() * emotes.length)] : undefined
 //   };
 // }
+
+export const metadata: Metadata = {
+  robots: 'noindex, nofollow',
+  title: 'Survey Response - Parliant.AI',
+  description: 'Respond to survey'
+};
 
 export default function SurveyResponsePage() {
   const params = useParams();

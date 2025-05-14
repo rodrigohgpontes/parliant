@@ -13,11 +13,10 @@ export default function Home() {
             <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 items-center">
               <div className="space-y-4">
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tighter">
-                  Get to know your customers with AI-powered conversations
+                  Transform feedback with AI-powered conversational surveys
                 </h1>
                 <p className="text-xl text-muted-foreground md:text-2xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                  Collect deeper insights with open-ended surveys conducted by AI. No forms, no rigid questions—just
-                  honest, complete answers. Respondents can type or use voice to share their thoughts naturally.
+                  Get deeper insights through natural conversational surveys. No rigid forms—just AI-guided conversations that encourage honest, complete answers.
                 </p>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
                   <Link href="/signup">

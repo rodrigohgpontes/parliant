@@ -7,8 +7,8 @@ import { Analytics } from '@vercel/analytics/react';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Parliant.AI - AI-powered customer conversations",
-  description: "Get to know your customers with AI-powered conversations",
+  title: "Parliant.AI - conversational surveys conducted by AI",
+  description: "Transform customer feedback with AI-powered conversational surveys. Get to know your customers through natural, engaging conversations.",
 };
 
 export default function RootLayout({

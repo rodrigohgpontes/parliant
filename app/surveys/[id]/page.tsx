@@ -19,7 +19,6 @@ import { Label } from "@/components/ui/label";
 import { Thermometer } from "@/components/thermometer";
 import { AudioRecorder } from "@/app/components/AudioRecorder";
 import { Loader2 } from "lucide-react";
-import type { Metadata } from "next";
 
 interface Survey {
   id: string;
@@ -121,12 +120,6 @@ const LoadingDots = () => {
 //   };
 // }
 
-export const metadata: Metadata = {
-  robots: 'noindex, nofollow',
-  title: 'Survey Response - Parliant.AI',
-  description: 'Respond to survey'
-};
-
 export default function SurveyResponsePage() {
   const params = useParams();
   const searchParams = useSearchParams();
@@ -196,7 +189,6 @@ export default function SurveyResponsePage() {
         const res = await fetch(`/api/surveys/${params.id}`);
         if (res.ok) {
           const data = await res.json();
-          console.log("Survey data received:", data);
           setSurvey(data);
 
           // If we have a response ID, fetch the existing response

@@ -368,8 +368,14 @@ export default function Home() {
         </section>
       </main>
 
-      <div className="flex justify-center my-12">
+      <div className="flex justify-center items-center flex-col gap-8 my-12">
         <Image src="/logo-large.png" alt="Parliant.AI logo large" width={200} height={200} />
+
+        <div className="mt-3">
+          <a href="https://theresanaiforthat.com/ai/parliant-ai/?ref=featured&v=5984822" target="_blank" rel="nofollow">
+            <img width="300" src="https://media.theresanaiforthat.com/featured-on-taaft.png?width=600" alt="Featured on There's An AI For That" />
+          </a>
+        </div>
       </div>
 
       <footer className="border-t bg-background">

@@ -299,11 +299,6 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
                   <h2 className="text-xl font-medium text-gray-900">No responses yet</h2>
                   <p className="text-muted-foreground mt-2">Share your survey to start collecting responses</p>
                 </div>
-                <Link href={`/dashboard/surveys/${id}/share`}>
-                  <Button>
-                    Share Survey
-                  </Button>
-                </Link>
               </div>
             </div>
           ) : (

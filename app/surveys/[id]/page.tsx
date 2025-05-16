@@ -148,6 +148,7 @@ export default function SurveyResponsePage() {
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
   const [deletionCount, setDeletionCount] = useState(0);
   const [isDeletingMessage, setIsDeletingMessage] = useState(false);
+  const [infoSubmitted, setInfoSubmitted] = useState(false);
 
   // Load deletion count from localStorage on mount
   useEffect(() => {
@@ -586,7 +587,7 @@ export default function SurveyResponsePage() {
       console.error("Error getting AI response:", error);
     }
 
-    if (localResponseId && !window.location.href.includes(`responseId=${localResponseId}`)) {
+    if (false && localResponseId && infoSubmitted && !window.location.href.includes(`responseId=${localResponseId}`)) {
       window.location.href = `/surveys/${params.id}?responseId=${localResponseId}`;
     }
     setIsLoading(false);
@@ -594,6 +595,11 @@ export default function SurveyResponsePage() {
 
   const handleRespondentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!respondentName || !respondentEmail) {
+      alert("Please enter your name and email address");
+      return;
+    }
 
     // Validate email if provided
     if (respondentEmail && !respondentEmail.includes("@")) {
@@ -618,11 +624,16 @@ export default function SurveyResponsePage() {
         throw new Error("Failed to update respondent info");
       }
 
-      setShowRespondentModal(false);
     } catch (error) {
       console.error("Error updating respondent info:", error);
     } finally {
       setIsLoading(false);
+
+      if (currentResponseId && !window.location.href.includes(`responseId=${currentResponseId}`)) {
+        window.location.href = `/surveys/${params.id}?responseId=${currentResponseId}`;
+      }
+      setShowRespondentModal(false);
+      setInfoSubmitted(true);
     }
   };
 
@@ -815,6 +826,11 @@ export default function SurveyResponsePage() {
             ) : (
               <>
                 <div className="space-y-6">
+                  {/* Survey Objective Title */}
+                  <h1 className="text-xl md:text-2xl font-semibold text-center mb-4">
+                    {survey.objective}
+                  </h1>
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="relative">
@@ -1059,7 +1075,10 @@ export default function SurveyResponsePage() {
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => setShowRespondentModal(false)}
+                  onClick={() => {
+                    setShowRespondentModal(false);
+                    setInfoSubmitted(true);
+                  }}
                 >
                   Skip
                 </Button>

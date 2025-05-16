@@ -111,7 +111,8 @@ export default function CreateSurveyPage() {
         },
         body: JSON.stringify({
           objective,
-          guidelines: guidelines.trim()
+          guidelines: guidelines.trim(),
+          currentQuestion: firstQuestion.trim()
         }),
       });
 
@@ -172,7 +173,7 @@ export default function CreateSurveyPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Learning Objective</Label>
-              <p className="text-sm text-muted-foreground red">Visible to the respondent</p>
+              <p className="text-sm text-muted-foreground text-red-500">Visible to the respondent</p>
               <div className="flex gap-2">
                 <Textarea
                   id="title"

@@ -106,6 +106,40 @@ export default function Home() {
           </div>
         </section>
 
+        {/* Survey Experience Section */}
+        <section className="py-12" style={{ background: 'linear-gradient(135deg, rgba(255, 127, 80, 0.3) 0%, rgba(255, 127, 80, 0.15) 100%)' }}>
+          <div className="container px-4 md:px-6">
+            <div className="flex justify-center">
+              <div className="relative max-w-xl w-full p-6 border rounded-xl bg-card shadow-md" style={{ borderColor: 'rgba(255, 127, 80, 0.4)' }}>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full" style={{ background: 'rgba(255, 127, 80, 0.2)' }}>
+                    <div className="flex items-center justify-center h-full">
+                      <MessageSquare className="h-6 w-6" style={{ color: 'rgb(255, 127, 80)' }} />
+                    </div>
+                  </div>
+                  <h3 className="text-2xl font-bold" style={{ color: 'rgb(205, 80, 45)' }}>Try responding to a survey now</h3>
+                </div>
+                <p className="text-md mb-6">
+                  See for yourself how our AI conversations feel compared to traditional surveys.
+                </p>
+                <div className="flex justify-center">
+                  <Link href="https://www.parliant.ai/surveys/51536356-8ca6-45a4-a9f4-4bfcb9ef9421" target="_blank" rel="noopener noreferrer">
+                    <Button className="w-full" size="lg" style={{
+                      backgroundColor: 'rgb(205, 80, 45)',
+                      borderColor: 'rgb(205, 80, 45)',
+                      color: 'white',
+                      width: '220px'
+                    }}>
+                      Respond now
+                      <ChevronRight className="ml-2 h-5 w-5" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* What is it Section */}
         <section id="what-is-it" className="py-20 bg-background">
           <div className="container px-4 md:px-6">

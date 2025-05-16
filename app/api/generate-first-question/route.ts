@@ -3,7 +3,7 @@ import { AIServiceFactory } from "@/lib/ai/service";
 
 export async function POST(request: Request) {
     try {
-        const { objective, guidelines } = await request.json();
+        const { objective, guidelines, currentQuestion } = await request.json();
 
         if (!objective) {
             return NextResponse.json(
@@ -24,33 +24,37 @@ export async function POST(request: Request) {
         const messages = [
             {
                 role: "system" as const,
-                content: `You are an expert at creating engaging, open-ended first questions for surveys. Your task is to create an effective opening question that:
-- Directly relates to the learning objective
-- Is open-ended and encourages detailed responses
-- Is conversational and approachable
-- Is specific enough to elicit meaningful insights
-- Is phrased in second person (addressing the respondent directly)
-- Is concise (ideally no more than 1-2 sentences)
+                content: `You are an expert at creating engaging, open-ended first questions for surveys. 
+                ${currentQuestion ? 'Your task is to improve the user initial draft of opening question that is provided below. The improved version is:' : 'Your task is to create a short and effective opening question that'}:
+                    - Directly relates to the learning objective
+                    - Is open-ended and encourages detailed responses
+                    - Is conversational and approachable
+                    - Is specific enough to elicit meaningful insights
+                    - Is phrased in second person (addressing the respondent directly)
+                    - Is concise (ideally no more than 1-2 sentences)
 
-Return ONLY the question without any additional text, quotes, or context.`
+                    Return ONLY the question without any additional text, quotes, or context.`
             },
             {
                 role: "user" as const,
                 content: `Create an engaging first question for a survey with this learning objective:
-"${objective}"
+                    "${objective}"
 
-${guidelines ? `The survey has the following guidelines:
-${guidelines}` : ''}
+                    ${guidelines ? `The survey has the following guidelines:
+                    ${guidelines}` : ''}
 
-The question should:
-- Directly relate to the learning objective
-- Be open-ended and encourage detailed responses
-- Be conversational and approachable
-- Be specific enough to elicit meaningful insights
-- Be phrased in second person (addressing the respondent directly)
-- Be concise (ideally no more than 1-2 sentences)
+                    ${currentQuestion ? `Improve strongly based on the user's input for the first question. The current firstquestion is:
+                    ${currentQuestion}` : ''}
 
-Return ONLY the question without any additional text or quotes.`
+                    The question should:
+                    - Directly relate to the learning objective
+                    - Be open-ended and encourage detailed responses
+                    - Be conversational and approachable
+                    - Be specific enough to elicit meaningful insights
+                    - Be phrased in second person (addressing the respondent directly)
+                    - Be concise (ideally 1 very shortsentence)
+
+                    Return ONLY the question without any additional text or quotes.`
             }
         ];
 

@@ -148,7 +148,8 @@ export default function SurveyResponsePage() {
 
   // Helper function to check if max questions is reached
   const isMaxQuestionsReached = () => {
-    return survey?.max_questions !== undefined && getUserMessageCount() >= survey.max_questions;
+    return false;
+    // return survey?.max_questions !== undefined && getUserMessageCount() >= survey.max_questions;
   };
 
   // Helper function to check if approaching max questions (80% or more)

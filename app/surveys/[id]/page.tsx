@@ -5,7 +5,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
-import { Send, Shuffle, Mic, RefreshCw } from "lucide-react";
+import { Send, Shuffle, Mic, RefreshCw, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,12 @@ import { Label } from "@/components/ui/label";
 import { Thermometer } from "@/components/thermometer";
 import { AudioRecorder } from "@/app/components/AudioRecorder";
 import { Loader2 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Survey {
   id: string;
@@ -140,6 +146,25 @@ export default function SurveyResponsePage() {
   const [isEvaluating, setIsEvaluating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
+  const [deletionCount, setDeletionCount] = useState(0);
+  const [isDeletingMessage, setIsDeletingMessage] = useState(false);
+
+  // Load deletion count from localStorage on mount
+  useEffect(() => {
+    if (currentResponseId) {
+      const storedCount = localStorage.getItem(`deletion_count_${currentResponseId}`);
+      if (storedCount) {
+        setDeletionCount(parseInt(storedCount, 10));
+      }
+    }
+  }, [currentResponseId]);
+
+  // Update localStorage when deletion count changes
+  useEffect(() => {
+    if (currentResponseId) {
+      localStorage.setItem(`deletion_count_${currentResponseId}`, deletionCount.toString());
+    }
+  }, [deletionCount, currentResponseId]);
 
   // Helper function to count user messages
   const getUserMessageCount = () => {
@@ -198,6 +223,17 @@ export default function SurveyResponsePage() {
               const responseData = await responseRes.json();
               setMessages(responseData.conversation);
               setCurrentResponseId(responseData.id);
+
+              // Check if we have a stored deletion count for this response
+              const storedCount = localStorage.getItem(`deletion_count_${responseData.id}`);
+              if (storedCount) {
+                setDeletionCount(parseInt(storedCount, 10));
+              } else {
+                // Initialize deletion count to 0 if not present
+                localStorage.setItem(`deletion_count_${responseData.id}`, "0");
+                setDeletionCount(0);
+              }
+
               if (responseData.completed_at) {
                 setIsSubmitted(true);
               }
@@ -266,6 +302,8 @@ export default function SurveyResponsePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
+    let localResponseId = currentResponseId;
 
     // Check for conditions that prevent submission
     if (!input.trim() || isSubmitted || !survey?.is_active) return;
@@ -302,7 +340,6 @@ export default function SurveyResponsePage() {
 
     const userMessage = input.trim();
     setInput("");
-    setIsLoading(true);
 
     try {
       // If this is the first message, create a response record first
@@ -340,6 +377,7 @@ export default function SurveyResponsePage() {
         if (res.ok) {
           const data = await res.json();
           setCurrentResponseId(data.id);
+          localResponseId = data.id;
 
           // Show the modal for respondent info
           setShowRespondentModal(true);
@@ -419,7 +457,7 @@ export default function SurveyResponsePage() {
 
             // Check if we've reached max_questions after the first question
             const userMessageCount = updatedMessages.filter(msg => msg.role === "user").length;
-            console.log(`User message count: ${userMessageCount}, Max questions: ${survey?.max_questions}`);
+
             if (survey?.max_questions && userMessageCount >= survey.max_questions) {
               console.log("Max questions reached, auto-submitting survey");
               await handleFinalSubmit();
@@ -442,7 +480,6 @@ export default function SurveyResponsePage() {
 
         // Count user messages to check if we're at the max_questions limit
         const userMessageCount = newMessages.filter(msg => msg.role === "user").length;
-        console.log(`User message count: ${userMessageCount}, Max questions: ${survey?.max_questions}`);
 
         // If we've reached max_questions, auto-submit the survey after adding the user's message
         if (survey?.max_questions && userMessageCount >= survey.max_questions) {
@@ -548,6 +585,11 @@ export default function SurveyResponsePage() {
     } catch (error) {
       console.error("Error getting AI response:", error);
     }
+
+    console.log('>>> will redirect to', `/surveys/${params.id}?responseId=${localResponseId}`);
+    if (localResponseId && !window.location.href.includes(`responseId=${localResponseId}`)) {
+      window.location.href = `/surveys/${params.id}?responseId=${localResponseId}`;
+    }
     setIsLoading(false);
   };
 
@@ -628,6 +670,91 @@ export default function SurveyResponsePage() {
 
     setInput(text);
     setShowAudioRecorder(false);
+  };
+
+  const handleDeleteMessages = async (messageIndex: number) => {
+    if (deletionCount >= 3 || !currentResponseId || isDeletingMessage) return;
+
+    // Confirm deletion
+    if (!confirm("Are you sure you want to delete this message and restart the conversation from this point? You can only do this 3 times per conversation.")) {
+      return;
+    }
+
+    setIsDeletingMessage(true);
+
+    // Find the message at the given index
+    const targetMessage = messages[messageIndex];
+    if (targetMessage.role !== 'user') return;
+
+    // Keep only messages before the selected one
+    const updatedMessages = messages.slice(0, messageIndex);
+    setMessages(updatedMessages);
+    setDeletionCount(prevCount => prevCount + 1);
+
+    try {
+      // Update the response in the database
+      const res = await fetch(`/api/surveys/${params.id}/responses/${currentResponseId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          conversation: updatedMessages,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update conversation after deletion");
+      }
+
+      // Reset insight level since the conversation changed
+      setInsightLevel(0);
+      setInsightExplanation(null);
+
+      // If the last message after deletion is from the assistant, we don't need to do anything
+      // If there are no messages or the last message is from a user, we need to get a new assistant message
+      if (updatedMessages.length === 0 || updatedMessages[updatedMessages.length - 1].role === 'user') {
+        // Get a new AI response based on the updated conversation
+        const aiRes = await fetch(`/api/surveys/${params.id}/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messages: updatedMessages,
+            survey: {
+              objective: survey?.objective,
+              orientations: survey?.orientations,
+            },
+          }),
+        });
+
+        if (aiRes.ok) {
+          const aiData = await aiRes.json();
+          const newMessages = [...updatedMessages, { role: "assistant" as const, content: aiData.content }];
+          setMessages(newMessages);
+
+          // Update the response with the new AI message
+          await fetch(`/api/surveys/${params.id}/responses/${currentResponseId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              conversation: newMessages,
+            }),
+          });
+        }
+      }
+
+    } catch (error) {
+      console.error("Error updating conversation after deletion:", error);
+      // Revert changes on error
+      setMessages(messages);
+      setDeletionCount(prevCount => prevCount - 1);
+    } finally {
+      setIsDeletingMessage(false);
+    }
   };
 
   if (isSubmitted) {
@@ -713,7 +840,7 @@ export default function SurveyResponsePage() {
                   {survey.max_questions && survey.is_active && (
                     <div className="flex justify-between items-center mb-4">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Questions:</span>
+                        <span className="text-sm font-medium">Answers:</span>
                         <div className="bg-muted rounded-full px-3 py-0.5 text-xs">
                           <span className={
                             isMaxQuestionsReached()
@@ -743,36 +870,46 @@ export default function SurveyResponsePage() {
                     </div>
                   )}
 
-                  {/* Character limit indicator */}
-                  {survey.max_characters && survey.is_active && (
-                    <div className="flex justify-end items-center mb-2">
-                      <div className={`text-xs ${isOverCharacterLimit()
-                        ? "text-red-600 font-semibold"
-                        : input.length > survey.max_characters * 0.8
-                          ? "text-amber-600"
-                          : "text-gray-500"
-                        }`}>
-                        {input.length} / {survey.max_characters} characters
-                      </div>
-                    </div>
-                  )}
-
                   <div className="space-y-4">
                     {messages.map((message, index) => (
                       <div
                         key={index}
-                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} relative group`}
                       >
                         <div
                           className={`max-w-[80%] rounded-2xl px-4 py-2 ${message.role === 'user'
                             ? 'bg-primary text-primary-foreground rounded-br-none'
                             : 'bg-muted rounded-bl-none'
-                            }`}
+                            } relative`}
                         >
                           <p className="text-sm font-medium mb-1 opacity-70">
                             {message.role === 'user' ? 'You' : 'Assistant'}
                           </p>
                           <p className="whitespace-pre-wrap">{message.content}</p>
+
+                          {/* Trash icon for user messages */}
+                          {message.role === 'user' && deletionCount < 3 && !isSubmitted && survey?.is_active && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    onClick={() => handleDeleteMessages(index)}
+                                    className="absolute -left-10 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-2 hover:bg-muted rounded-full"
+                                    disabled={isLoading || isDeletingMessage}
+                                  >
+                                    {isDeletingMessage ? (
+                                      <Loader2 className="h-4 w-4 text-red-500 animate-spin" />
+                                    ) : (
+                                      <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
+                                    )}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="left">
+                                  <p>Delete this message and restart conversation from this point({3 - deletionCount} restarts left)</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -798,7 +935,7 @@ export default function SurveyResponsePage() {
                             }
                             maxLength={survey.max_characters}
                             className={`min-h-[100px] resize-none pr-24 ${isOverCharacterLimit() ? 'border-red-500 focus:ring-red-500' : ''}`}
-                            disabled={isLoading || isSubmitted || !survey.is_active || isMaxQuestionsReached()}
+                            disabled={isLoading || isSubmitted || !survey.is_active || !!isMaxQuestionsReached()}
                           />
                           <div className="absolute bottom-3 right-3 flex items-center gap-2">
                             <Button
@@ -806,14 +943,14 @@ export default function SurveyResponsePage() {
                               variant="ghost"
                               size="icon"
                               onClick={() => setShowAudioRecorder(true)}
-                              disabled={isLoading || isSubmitted || !survey.is_active || isMaxQuestionsReached()}
+                              disabled={isLoading || isSubmitted || !survey.is_active || !!isMaxQuestionsReached()}
                               className="text-gray-400 hover:text-gray-600"
                             >
                               <Mic className="h-4 w-4" />
                             </Button>
                             <Button
                               type="submit"
-                              disabled={!input.trim() || isLoading || isSubmitted || !survey.is_active || isMaxQuestionsReached() || isOverCharacterLimit()}
+                              disabled={!input.trim() || isLoading || isSubmitted || !survey.is_active || !!isMaxQuestionsReached() || !!isOverCharacterLimit()}
                               className="text-[14px] sm:text-[15px] font-medium rounded-full"
                             >
                               {isLoading ? (
@@ -834,6 +971,19 @@ export default function SurveyResponsePage() {
                         </div>
                       );
                     })()}
+                    {/* Character limit indicator */}
+                    {survey.max_characters && survey.is_active && (
+                      <div className="flex justify-end items-center mb-2">
+                        <div className={`text-xs ${isOverCharacterLimit()
+                          ? "text-red-600 font-semibold"
+                          : input.length > survey.max_characters * 0.8
+                            ? "text-amber-600"
+                            : "text-gray-500"
+                          }`}>
+                          {input.length} / {survey.max_characters} characters
+                        </div>
+                      </div>
+                    )}
                   </form>
 
                   <div className="flex items-center justify-center w-full">
@@ -841,6 +991,13 @@ export default function SurveyResponsePage() {
                       <Thermometer value={insightLevel} max={10} explanation={insightExplanation || undefined} />
                     </div>
                   </div>
+
+                  {/* Show deletion count information if deletions have been made */}
+                  {deletionCount > 0 && (
+                    <div className="text-xs text-muted-foreground text-center">
+                      {deletionCount}/3 conversation restarts used
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end mt-6">

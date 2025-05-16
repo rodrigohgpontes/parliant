@@ -5,14 +5,14 @@ export async function GET(
     request: Request,
     { params }: { params: { id: string; }; }
 ) {
-    const surveyId = params.id;
+    const { id } = await params;
 
     try {
         // First check if the survey exists at all
         const surveyExists = await db`
       SELECT id, is_active 
       FROM surveys 
-      WHERE id = ${surveyId}
+      WHERE id = ${id}
     `;
 
         if (!surveyExists?.length) {
@@ -34,7 +34,7 @@ export async function GET(
         const survey = await db`
       SELECT id, objective, max_questions, max_characters 
       FROM surveys 
-      WHERE id = ${surveyId}
+      WHERE id = ${id}
     `;
 
         // Return only the necessary fields for public access

@@ -2,28 +2,29 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 
 export async function POST(
-    request: Request,
-    { params }: { params: { id: string; }; }
+  request: Request,
+  { params }: { params: { id: string; }; }
 ) {
-    try {
-        const body = await request.json();
-        const { conversation, completed_at } = body;
+  try {
+    const body = await request.json();
+    const { conversation, completed_at } = body;
+    const { id } = await params;
 
-        // Check if survey exists and is active
-        const survey = await db`
+    // Check if survey exists and is active
+    const survey = await db`
       SELECT * FROM surveys 
-      WHERE id = ${params.id} AND is_active = true
+      WHERE id = ${id} AND is_active = true
     `;
 
-        if (!survey?.length) {
-            return NextResponse.json(
-                { error: "Survey not found" },
-                { status: 404 }
-            );
-        }
+    if (!survey?.length) {
+      return NextResponse.json(
+        { error: "Survey not found" },
+        { status: 404 }
+      );
+    }
 
-        // Create response
-        await db`
+    // Create response
+    await db`
       INSERT INTO responses (
         survey_id,
         conversation,
@@ -31,19 +32,19 @@ export async function POST(
         created_at
       )
       VALUES (
-        ${params.id},
+        ${id},
         ${JSON.stringify(conversation)},
         ${completed_at},
         ${new Date()}
       )
     `;
 
-        return NextResponse.json({ success: true });
-    } catch (error) {
-        console.error("Error submitting response:", error);
-        return NextResponse.json(
-            { error: "Failed to submit response" },
-            { status: 500 }
-        );
-    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error submitting response:", error);
+    return NextResponse.json(
+      { error: "Failed to submit response" },
+      { status: 500 }
+    );
+  }
 } 

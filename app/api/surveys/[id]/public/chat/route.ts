@@ -8,11 +8,12 @@ export async function POST(
 ) {
     try {
         const { messages, survey } = await request.json();
+        const { id } = await params;
 
         // Verify survey exists and is active
         const surveyResult = await db`
       SELECT * FROM surveys 
-      WHERE id = ${params.id} AND is_active = true
+      WHERE id = ${id} AND is_active = true
     `;
 
         if (!surveyResult?.length) {

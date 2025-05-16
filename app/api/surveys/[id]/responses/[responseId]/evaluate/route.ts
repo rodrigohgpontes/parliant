@@ -12,7 +12,7 @@ export async function POST(
 ) {
     try {
         const { conversation } = await req.json();
-        const { id, responseId } = params;
+        const { id, responseId } = await params;
 
         // Get the survey objective
         const surveyResult = await db`
@@ -43,11 +43,13 @@ export async function POST(
 4. Engagement level
 5. Communication clarity
 
+Be strict with the evaluation. Don't be afraid to give a low score if the answers are not good.
+
 Return only JSON with:
 - insight_level: integer 0-10
 - explanation: brief explanation (max 20 words)
 
-Example: {"insight_level": 7, "explanation": "Good depth on main topics, but missed opportunities for specific details."}`,
+Example: {"insight_level": 6, "explanation": "Good depth on main topics, but missed opportunities for specific details."}`,
                 },
                 {
                     role: "user",

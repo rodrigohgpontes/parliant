@@ -6,13 +6,13 @@ export async function GET(
     request: Request,
     { params }: { params: { id: string; }; }
 ) {
-    const surveyId = params.id;
+    const { id } = await params;
 
     try {
         const result = await db`
             SELECT id, objective, orientations, allow_anonymous, first_question, max_questions, max_characters, is_active
             FROM surveys 
-            WHERE id = ${surveyId}
+            WHERE id = ${id}
         `;
 
         if (!result?.length) {
@@ -33,11 +33,11 @@ export async function PUT(
     request: Request,
     { params }: { params: { id: string; }; }
 ) {
-    const surveyId = params.id;
+    const { id } = await params;
 
     try {
         const formData = await request.formData();
-        await updateAuthenticatedSurvey(surveyId, formData);
+        await updateAuthenticatedSurvey(id, formData);
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ error: 'Failed to update survey' }, { status: 500 });
@@ -48,10 +48,10 @@ export async function DELETE(
     request: Request,
     { params }: { params: { id: string; }; }
 ) {
-    const surveyId = params.id;
+    const { id } = await params;
 
     try {
-        await deleteAuthenticatedSurvey(surveyId);
+        await deleteAuthenticatedSurvey(id);
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ error: 'Failed to delete survey' }, { status: 500 });

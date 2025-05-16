@@ -6,7 +6,7 @@ export async function GET(
     { params }: { params: { id: string; responseId: string; }; }
 ) {
     try {
-        const { id, responseId } = params;
+        const { id, responseId } = await params;
 
         // Check if survey exists and is active
         const survey = await db`

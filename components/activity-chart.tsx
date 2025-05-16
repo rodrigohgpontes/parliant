@@ -21,7 +21,11 @@ interface ActivityChartProps {
 }
 
 // Deterministic color generator based on UUID
-export function getColorFromId(id: string): string {
+export function getColorFromId(id?: string): string {
+    if (!id) {
+        return `hsl(200, 70%, 50%)`; // Default color if id is undefined
+    }
+
     const hash = id.split('').reduce((acc: number, char: string) => {
         return char.charCodeAt(0) + ((acc << 5) - acc);
     }, 0);
@@ -31,15 +35,25 @@ export function getColorFromId(id: string): string {
 }
 
 export function ActivityChart({ responses, surveys }: ActivityChartProps) {
+    if (!Array.isArray(responses) || !Array.isArray(surveys)) {
+        return <div>No data to display</div>;
+    }
+
     const [daysToShow, setDaysToShow] = useState<7 | 30>(7);
 
     const chartData = useMemo(() => {
+        if (!responses.length || !surveys.length) {
+            return [];
+        }
+
         const now = new Date();
         const startDate = new Date(now);
         startDate.setDate(now.getDate() - daysToShow);
 
         // Filter responses within the date range
         const filteredResponses = responses.filter(response => {
+            if (!response?.completed_at) return false;
+
             const responseDate = new Date(response.completed_at);
             return responseDate >= startDate && responseDate <= now;
         });
@@ -57,6 +71,8 @@ export function ActivityChart({ responses, surveys }: ActivityChartProps) {
 
         // Count responses for each survey on each date
         filteredResponses.forEach(response => {
+            if (!response?.completed_at || !response?.survey_id) return;
+
             const date = new Date(response.completed_at).toISOString().split('T')[0];
             const surveyId = response.survey_id;
 
@@ -74,11 +90,16 @@ export function ActivityChart({ responses, surveys }: ActivityChartProps) {
             .map(([date, surveyCounts]) => {
                 const data: { [key: string]: any; } = { date };
                 surveys.forEach(survey => {
+                    if (!survey?.id || !survey?.objective) return;
                     data[survey.objective] = surveyCounts[survey.id] || 0;
                 });
                 return data;
             });
     }, [responses, surveys, daysToShow]);
+
+    if (chartData.length === 0) {
+        return <div className="text-sm text-muted-foreground">No activity data to display</div>;
+    }
 
     return (
         <div className="space-y-4">
@@ -130,12 +151,14 @@ export function ActivityChart({ responses, surveys }: ActivityChartProps) {
                             contentStyle={{ fontSize: 11 }}
                         />
                         {surveys.map(survey => (
-                            <Bar
-                                key={survey.id}
-                                dataKey={survey.objective}
-                                stackId="a"
-                                fill={getColorFromId(survey.id)}
-                            />
+                            survey?.id && survey?.objective ? (
+                                <Bar
+                                    key={survey.id}
+                                    dataKey={survey.objective}
+                                    stackId="a"
+                                    fill={getColorFromId(survey.id)}
+                                />
+                            ) : null
                         ))}
                     </BarChart>
                 </ResponsiveContainer>

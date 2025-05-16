@@ -17,13 +17,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
+import { useRouter } from "next/navigation";
 
 export default function CreateSurveyPage() {
   const [objective, setObjective] = useState("");
   const [isRephrasing, setIsRephrasing] = useState(false);
   const [guidelines, setGuidelines] = useState("");
   const [isImprovingGuidelines, setIsImprovingGuidelines] = useState(false);
+  const [firstQuestion, setFirstQuestion] = useState("");
+  const [isGeneratingQuestion, setIsGeneratingQuestion] = useState(false);
   const [allowAnonymous, setAllowAnonymous] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
   const handleRephrase = async () => {
     if (!objective.trim()) {
@@ -91,6 +96,59 @@ export default function CreateSurveyPage() {
     }
   };
 
+  const handleGenerateFirstQuestion = async () => {
+    if (!objective.trim()) {
+      toast.error("Please enter a learning objective first");
+      return;
+    }
+
+    setIsGeneratingQuestion(true);
+    try {
+      const response = await fetch("/api/generate-first-question", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          objective,
+          guidelines: guidelines.trim()
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to generate first question");
+      }
+
+      const data = await response.json();
+      setFirstQuestion(data.firstQuestion);
+      toast.success("First question generated successfully!");
+    } catch (error) {
+      toast.error("Failed to generate first question");
+      console.error(error);
+    } finally {
+      setIsGeneratingQuestion(false);
+    }
+  };
+
+  const handleSubmit = async (formData: FormData) => {
+    setIsSubmitting(true);
+    try {
+      const result = await createSurveyServerAction(formData);
+
+      if (result?.error) {
+        toast.error(result.error);
+        setIsSubmitting(false);
+      } else {
+        toast.success("Survey created successfully!");
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      toast.error("Failed to create survey");
+      console.error(error);
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="p-6 space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-2">
@@ -103,7 +161,7 @@ export default function CreateSurveyPage() {
         <h1 className="text-3xl font-bold">New Survey</h1>
       </div>
 
-      <form action={createSurveyServerAction} className="space-y-6">
+      <form action={handleSubmit} className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Learning Objective</CardTitle>
@@ -114,6 +172,7 @@ export default function CreateSurveyPage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Learning Objective</Label>
+              <p className="text-sm text-muted-foreground red">Visible to the respondent</p>
               <div className="flex gap-2">
                 <Textarea
                   id="title"
@@ -225,6 +284,53 @@ export default function CreateSurveyPage() {
 
         <Card>
           <CardHeader>
+            <CardTitle>First Question (Optional)</CardTitle>
+            <CardDescription>
+              If provided, this question will be shown to the respondent as the first question of the survey without any AI consideration.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="first-question">First Question</Label>
+              <div className="flex gap-2">
+                <Textarea
+                  id="first-question"
+                  name="first_question"
+                  placeholder="Enter the first question to ask the respondent..."
+                  value={firstQuestion}
+                  onChange={(e) => setFirstQuestion(e.target.value)}
+                  className="min-h-[100px] border-primary/50 bg-primary/5 focus:border-primary focus:ring-primary hover:border-primary"
+                />
+                <TooltipProvider>
+                  <Tooltip delayDuration={200}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant={objective.trim() ? "secondary" : "outline"}
+                        size="icon"
+                        onClick={handleGenerateFirstQuestion}
+                        disabled={isGeneratingQuestion || !objective.trim()}
+                        className="h-[100px] w-16"
+                      >
+                        <Wand2 className={`h-5 w-5 ${isGeneratingQuestion ? "animate-spin" : ""}`} />
+                        <span className="sr-only">Let AI suggest first question</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Let AI suggest an engaging first question based on your objective and guidelines</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                This field is optional. If left empty, the AI will determine the most appropriate first question based on your learning objective and guidelines.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle>Survey Settings</CardTitle>
             <CardDescription>
               Configure additional settings for your survey.
@@ -249,7 +355,9 @@ export default function CreateSurveyPage() {
         </Card>
 
         <div className="flex justify-end">
-          <Button type="submit">Create Survey</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Creating..." : "Create Survey"}
+          </Button>
         </div>
       </form>
     </div>

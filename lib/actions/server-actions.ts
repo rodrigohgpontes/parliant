@@ -45,34 +45,6 @@ export async function createAuthenticatedResponse(surveyId: number, formData: Fo
     await createResponse(surveyId, formData);
 }
 
-export async function getAuthenticatedSurveys() {
-    const user = await getUser();
-
-    if (!user) {
-        throw new Error("Not authenticated");
-    }
-
-    // First get the user's UUID from the users table
-    const userResult = await db`
-        SELECT id FROM users 
-        WHERE auth0_id = ${user.sub}
-    `;
-
-    if (!userResult?.length) {
-        throw new Error(`User not found in database for auth0_id: ${user.sub}`);
-    }
-
-    const userId = userResult[0].id;
-
-    const result = await db`
-    SELECT * FROM surveys 
-    WHERE creator_id = ${userId}
-    AND (deleted_at IS NULL)
-    ORDER BY created_at DESC
-  `;
-    return result;
-}
-
 export async function getAuthenticatedSurvey(id: string): Promise<Survey | null> {
     const user = await getUser();
 
@@ -127,9 +99,9 @@ export async function createAuthenticatedSurvey(data: FormData) {
         throw new Error("Not authenticated");
     }
 
-    // First get the user's UUID and plan from the users table
+    // First get the user's UUID from the users table
     const userResult = await db`
-        SELECT id, plan FROM users 
+        SELECT id FROM users 
         WHERE auth0_id = ${user.sub}
     `;
 
@@ -137,8 +109,15 @@ export async function createAuthenticatedSurvey(data: FormData) {
         throw new Error(`User not found in database for auth0_id: ${user.sub}`);
     }
 
+    // Get the subscription plan
+    const subscriptionResult = await db`
+        SELECT plan, status 
+        FROM subscriptions 
+        WHERE user_id = ${userResult[0].id}
+    `;
+
     const userId = userResult[0].id;
-    const userPlan = userResult[0].plan;
+    const userPlan = subscriptionResult[0].plan;
 
     // If user is on free plan, check survey count
     if (userPlan === 'free') {
@@ -148,24 +127,26 @@ export async function createAuthenticatedSurvey(data: FormData) {
             AND deleted_at IS NULL
         `;
 
-        if (surveyCount[0].count >= 3) {
-            return;
+        if (surveyCount[0].count > 3) {
+            return { success: false, error: "Free plan limited to 3 surveys. Please upgrade to create more surveys." };
         }
     }
 
     const title = data.get("title") as string;
     const description = data.get("description") as string;
+    const firstQuestion = data.get("first_question") as string;
     const allowAnonymous = data.get("allow_anonymous") === "on";
 
     if (!title) {
-        throw new Error("Title is required");
+        return { success: false, error: "Title is required" };
     }
 
     await db`
-    INSERT INTO surveys (creator_id, objective, orientations, allow_anonymous)
-    VALUES (${userId}, ${title}, ${description}, ${allowAnonymous})
+    INSERT INTO surveys (creator_id, objective, orientations, first_question, allow_anonymous)
+    VALUES (${userId}, ${title}, ${description}, ${firstQuestion}, ${allowAnonymous})
   `;
     await revalidateDashboard();
+    return { success: true };
 }
 
 export async function updateAuthenticatedSurvey(id: string, data: FormData) {

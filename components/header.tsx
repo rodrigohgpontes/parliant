@@ -58,7 +58,17 @@ export function Header({ showAuth = true }: HeaderProps) {
                         </a>
                     </nav>
                 )}
-                {showAuth && <Navigation />}
+                <div className="flex items-center gap-4">
+                    {user && (
+                        <div className="hidden md:flex items-center text-sm text-muted-foreground">
+                            <span>{user.name || 'User'}</span>
+                            {user.email && (
+                                <span className="ml-1">({user.email})</span>
+                            )}
+                        </div>
+                    )}
+                    {showAuth && <Navigation />}
+                </div>
                 <MobileMenu showAuth={showAuth} />
             </div>
         </header>

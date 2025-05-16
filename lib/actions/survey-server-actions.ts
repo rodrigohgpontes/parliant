@@ -13,8 +13,13 @@ export async function getSurveyServerAction(id: string) {
 }
 
 export async function createSurveyServerAction(data: FormData) {
-    await createAuthenticatedSurvey(data);
-    redirect("/dashboard");
+    const result = await createAuthenticatedSurvey(data);
+
+    if (!result.success) {
+        return { error: result.error };
+    }
+
+    return { success: true };
 }
 
 export async function updateSurveyServerAction(id: string, data: FormData) {

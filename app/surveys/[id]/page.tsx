@@ -586,7 +586,6 @@ export default function SurveyResponsePage() {
       console.error("Error getting AI response:", error);
     }
 
-    console.log('>>> will redirect to', `/surveys/${params.id}?responseId=${localResponseId}`);
     if (localResponseId && !window.location.href.includes(`responseId=${localResponseId}`)) {
       window.location.href = `/surveys/${params.id}?responseId=${localResponseId}`;
     }

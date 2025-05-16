@@ -5,7 +5,7 @@ import { ExportPDFButton } from "@/components/export-pdf-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSurveyServer } from "@/lib/actions/server-data-actions";
-import { getResponsesServer, updateResponseSummary, updateSurveySummary, toggleSurveyStatus, updateSurveyGuidelines, markResponseAsCompleted, toggleResponseValidStatus } from "@/lib/actions/server-data-actions";
+import { getResponsesServer, updateResponseSummary, updateSurveySummary, toggleSurveyStatus, updateSurveyGuidelines, markResponseAsCompleted, toggleResponseValidStatus, updateSurveyFirstQuestion } from "@/lib/actions/server-data-actions";
 import { ArrowLeft, BarChart, Users, Clock, Activity, Sparkles, Copy, Pencil, X, Check, AlertTriangle, Ban } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -28,6 +28,7 @@ import { CopyButton } from "@/components/copy-button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Textarea } from "@/components/ui/textarea";
 import { EditableGuidelines } from "@/components/editable-guidelines";
+import { EditableFirstQuestion } from "@/components/editable-first-question";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ResponseToggleSwitch } from "@/components/response-toggle-switch";
@@ -83,6 +84,22 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
             </AccordionItem>
           </Accordion>
         </CardHeader>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-md">First Question</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <EditableFirstQuestion
+            question={survey.first_question || null}
+            onSave={async (firstQuestion) => {
+              "use server";
+              await updateSurveyFirstQuestion(survey.id, firstQuestion);
+              revalidatePath(`/dashboard/surveys/${survey.id}`);
+            }}
+          />
+        </CardContent>
       </Card>
 
       <Card className="bg-blue-50 border-blue-100">

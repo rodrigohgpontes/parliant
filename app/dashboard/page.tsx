@@ -25,6 +25,14 @@ export default async function DashboardPage() {
   // Flatten all responses for the chart
   const responses = allResponses.flat();
 
+  // Convert Date objects to strings for ActivityChart and ensure completed_at is always a string
+  const formattedResponses = responses
+    .filter(response => response.completed_at)
+    .map(response => ({
+      ...response,
+      completed_at: response.completed_at ? response.completed_at.toISOString() : ''
+    }));
+
   // Get user data and subscription status
   const session = await getSession();
   const user = session?.user ? await getUserByAuth0Id(session.user.sub) : null;
@@ -108,7 +116,7 @@ export default async function DashboardPage() {
               <BarChart className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent className="pt-2">
-              <ActivityChart responses={responses} surveys={surveys} />
+              <ActivityChart responses={formattedResponses} surveys={surveys} />
             </CardContent>
           </Card>
         </div>
@@ -191,7 +199,7 @@ export default async function DashboardPage() {
 
             return (
               <SurveyCard
-                key={survey.id}
+                key={`survey-card-${survey.id}`}
                 survey={survey}
                 metrics={{
                   started: startedResponses,

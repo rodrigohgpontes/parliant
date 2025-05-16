@@ -148,13 +148,12 @@ export default function SurveyResponsePage() {
 
   // Helper function to check if max questions is reached
   const isMaxQuestionsReached = () => {
-    return false;
-    // return survey?.max_questions !== undefined && getUserMessageCount() >= survey.max_questions;
+    return survey?.max_questions && getUserMessageCount() >= survey.max_questions;
   };
 
   // Helper function to check if approaching max questions (80% or more)
   const isApproachingMaxQuestions = () => {
-    return survey?.max_questions !== undefined &&
+    return survey?.max_questions &&
       getUserMessageCount() >= Math.floor(survey.max_questions * 0.8) &&
       getUserMessageCount() < survey.max_questions;
   };
@@ -167,7 +166,7 @@ export default function SurveyResponsePage() {
 
   // Helper function to check if character limit is reached or exceeded
   const isOverCharacterLimit = () => {
-    return survey?.max_characters !== undefined && input.length > survey.max_characters;
+    return survey?.max_characters && input.length > survey.max_characters;
   };
 
   // Helper function to get remaining characters

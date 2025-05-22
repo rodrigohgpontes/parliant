@@ -49,7 +49,7 @@ export default async function DashboardPage() {
   `;
 
   const subscription = subscriptionResult[0] || { plan: 'free', status: 'active' };
-  const hasActiveSubscription = subscription.status === 'active' && (subscription.plan === 'pro' || subscription.plan === 'enterprise');
+  const hasActiveSubscription = subscription && subscription.status === 'active' && (subscription.plan === 'pro' || subscription.plan === 'enterprise');
 
   return (
     <div className="flex flex-col min-h-screen p-6">

@@ -117,7 +117,7 @@ export async function createAuthenticatedSurvey(data: FormData) {
     `;
 
     const userId = userResult[0].id;
-    const userPlan = subscriptionResult[0].plan;
+    const userPlan = subscriptionResult[0]?.plan || 'free';
 
     // If user is on free plan, check survey count
     if (userPlan === 'free') {

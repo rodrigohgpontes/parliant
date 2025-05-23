@@ -1,5 +1,15 @@
 {
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
-  "workbench.colorTheme": "Default Dark+"
+  "workbench.colorTheme": "Cursor Dark High Contrast",
+  "workbench.colorCustomizations": {
+    "tab.inactiveBackground": "#2d2d2d",
+    "tab.border": "#000000",
+    "tab.activeBorderTop": "#aaaaaa",
+    "tab.inactiveForeground": "#aaaaaa",
+    "editor.wordHighlightBackground": "#DDDDDD33",
+    "editor.wordHighlightStrongBackground": "#DDDDDD66",
+    "editor.selectionForeground": "#ffffff",
+    "editor.selectionBackground": "#0066CC"
+  }
 }

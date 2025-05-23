@@ -306,7 +306,7 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[160px]">Respondent</TableHead>
+                    <TableHead className="w-[240px]">Respondent</TableHead>
                     <TableHead className="w-[80px]">Status</TableHead>
                     <TableHead className="w-[60px]">User Msgs</TableHead>
                     <TableHead className="w-[230px]">Conversation</TableHead>
@@ -323,8 +323,22 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
                       key={response.id}
                       className={response.is_invalid ? "bg-red-50/50" : undefined}
                     >
-                      <TableCell className="max-w-[160px] truncate">
-                        {response.respondent_name || response.respondent_email || 'Anonymous'}
+                      <TableCell className="max-w-[240px]">
+                        <div className="flex items-start gap-2">
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="truncate">{response.respondent_name || 'Anonymous'}</span>
+                            {response.respondent_email && (
+                              <span className="text-xs text-muted-foreground truncate">
+                                {response.respondent_email}
+                              </span>
+                            )}
+                          </div>
+                          <div className="shrink-0 mt-0.5">
+                            <CopyButton
+                              text={response.respondent_email || response.respondent_name || 'Anonymous'}
+                            />
+                          </div>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant={response.completed_at ? "default" : "secondary"}>

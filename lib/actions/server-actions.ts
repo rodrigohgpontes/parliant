@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getSession, getUser } from "@/lib/auth0";
+import { getUser } from "@/lib/auth0";
 import { createResponse } from "./response-actions";
 import { db } from "@/lib/db/index";
 

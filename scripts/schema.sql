@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS responses (
     respondent_name text,
     conversation jsonb NOT NULL,
     summary text,
+    summary_generated_at timestamp with time zone,
     tags text[],
     insight_level integer,
     insight_explanation text,

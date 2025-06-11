@@ -1,5 +1,5 @@
-import { BaseAIService, AIConfig } from "../base-service";
-import { AIModel, AVAILABLE_MODELS } from "../types";
+import { BaseAIService } from "../base-service";
+import { AIModel, AVAILABLE_MODELS, AIConfig } from "../types";
 import OpenAI from "openai";
 
 export class OpenAIService extends BaseAIService {
@@ -34,15 +34,22 @@ export class OpenAIService extends BaseAIService {
                 throw new Error(`Invalid OpenAI model: ${modelName}. Available models: ${availableModels.join(', ')}`);
             }
 
-            const response = await this.client.chat.completions.create({
+            // Prepare the request parameters
+            const requestParams: any = {
                 model: modelName,
                 messages: messages.map(msg => ({
                     role: msg.role,
                     content: msg.content,
                 })),
-                temperature: config?.temperature || this.temperature,
-                max_tokens: config?.maxTokens || this.maxTokens,
-            });
+                max_completion_tokens: config?.maxTokens || this.maxTokens,
+            };
+
+            // Only add temperature for models that support it (o3 only supports default temperature of 1)
+            if (modelName !== 'o3') {
+                requestParams.temperature = config?.temperature || this.temperature;
+            }
+
+            const response = await this.client.chat.completions.create(requestParams);
 
             return {
                 content: response.choices[0].message.content || '',

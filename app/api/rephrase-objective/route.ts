@@ -14,11 +14,12 @@ export async function POST(request: Request) {
 
         const aiService = AIServiceFactory.create("OPENAI", {
             model: {
-                name: "gpt-4-turbo-preview",
+                name: "o3",
                 provider: "openai",
-                maxTokens: 500,
+                maxTokens: 2048,
             },
             temperature: 0.7,
+            maxTokens: 1000
         });
 
         const messages = [

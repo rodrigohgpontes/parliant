@@ -31,8 +31,8 @@ export async function POST(
 
         // Ask AI to evaluate the conversation
         const completion = await openai.chat.completions.create({
-            model: "gpt-4.1-nano",
-            max_tokens: 100, // Limit token output for concise response
+            model: "o3",
+            max_completion_tokens: 100, // Limit token output for concise response
             messages: [
                 {
                     role: "system",

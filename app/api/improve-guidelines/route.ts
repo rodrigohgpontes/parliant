@@ -14,9 +14,9 @@ export async function POST(request: Request) {
 
         const aiService = AIServiceFactory.create("OPENAI", {
             model: {
-                name: "gpt-4-turbo-preview",
+                name: "o3",
                 provider: "openai",
-                maxTokens: 1200,
+                maxTokens: 4096,
             },
             temperature: 0.7,
         });

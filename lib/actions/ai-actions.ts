@@ -13,7 +13,7 @@ export async function generateSummary(conversation: any[]): Promise<GenerateSumm
     try {
         const aiService = AIServiceFactory.create('OPENAI', {
             model: {
-                name: "gpt-4.1-nano",
+                name: "o3",
                 provider: "openai",
                 maxTokens: 4096
             },
@@ -51,7 +51,7 @@ export async function generateSurveySummary(objective: string, orientations?: st
     try {
         const aiService = AIServiceFactory.create('OPENAI', {
             model: {
-                name: "gpt-4.1-nano",
+                name: "o3",
                 provider: "openai",
                 maxTokens: 4096
             },

@@ -18,8 +18,8 @@ export async function analyzeResponse(responseId: number) {
     const content = response[0].data.content;
 
     const completion = await openai.chat.completions.create({
-        model: "gpt-4.1-nano",
-        max_tokens: 300,
+        model: "o3",
+        max_completion_tokens: 300,
         messages: [
             {
                 role: "system",
@@ -74,7 +74,8 @@ export async function getSurveyInsights(surveyId: number) {
     const content = responses.map((r) => r.data.content).join("\n\n");
 
     const completion = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: "o3",
+        max_completion_tokens: 300,
         messages: [
             {
                 role: "system",

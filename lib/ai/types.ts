@@ -32,7 +32,7 @@ export const AI_PROVIDERS = {
 
 // Default model configurations
 export const DEFAULT_MODEL: AIModel = {
-    name: 'gpt-4.1-nano',
+    name: 'o3',
     provider: 'openai',
     maxTokens: 8192,
 };
@@ -40,6 +40,11 @@ export const DEFAULT_MODEL: AIModel = {
 // Available models for each provider
 export const AVAILABLE_MODELS: Record<keyof typeof AI_PROVIDERS, AIModel[]> = {
     OPENAI: [
+        {
+            name: 'o3',
+            provider: 'openai',
+            maxTokens: 8192,
+        },
         {
             name: 'gpt-3.5-turbo',
             provider: 'openai',

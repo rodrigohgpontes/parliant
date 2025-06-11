@@ -26,7 +26,7 @@ export async function POST(
         // Get AI response
         const aiService = AIServiceFactory.create("OPENAI", {
             model: {
-                name: "gpt-4.1-nano",
+                name: "o3",
                 provider: "openai",
                 maxTokens: 4096
             },

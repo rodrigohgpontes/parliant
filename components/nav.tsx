@@ -3,9 +3,12 @@
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useUser } from "@auth0/nextjs-auth0";
+import { usePathname } from "next/navigation";
 
 export function Navigation() {
     const { user, isLoading } = useUser();
+    const pathname = usePathname();
+    const isRespondingToSurvey = pathname?.includes("surveys/");
 
     return (
         <div className="hidden md:flex items-center gap-4">
@@ -27,6 +30,12 @@ export function Navigation() {
                         </Button>
                     </Link>
                 </>
+            ) : isRespondingToSurvey ? (
+                <a href="/" target="_blank" rel="noopener noreferrer">
+                    <Button size="sm">
+                        Create Your Own Survey
+                    </Button>
+                </a>
             ) : (
                 <>
                     <Link href="/login">

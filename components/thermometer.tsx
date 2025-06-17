@@ -5,7 +5,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Info } from "lucide-react";
+import { Info, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface ThermometerProps {
@@ -13,12 +13,24 @@ interface ThermometerProps {
     max: number;
     explanation?: string;
     className?: string;
+    loading?: boolean;
+    userStartedTyping?: boolean;
 }
 
-export function Thermometer({ value, max, explanation, className }: ThermometerProps) {
+export function Thermometer({ value, max, explanation, className, loading, userStartedTyping }: ThermometerProps) {
     const percentage = value !== null ? (value / max) * 100 : 0;
     const displayValue = value !== null ? Math.round(value) : "—";
     const colorIntensity = value !== null ? Math.min(1, value / max) : 0;
+    const [showDescription, setShowDescription] = useState(false);
+
+    // Show description when user starts typing or when insight level becomes greater than 0
+    useEffect(() => {
+        if (userStartedTyping || (value !== null && value > 0)) {
+            setShowDescription(true);
+        } else if (value === 0 || value === null) {
+            setShowDescription(false);
+        }
+    }, [value, userStartedTyping]);
 
     return (
         <div className={cn("flex flex-col items-center gap-2", className)}>
@@ -40,14 +52,26 @@ export function Thermometer({ value, max, explanation, className }: ThermometerP
                         backgroundColor: `rgba(255, 127, 80, ${0.5 + colorIntensity * 0.5})`
                     }}
                 >
-                    {displayValue}
+                    {loading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                        displayValue
+                    )}
                 </div>
             </div>
-            <div className="text-sm w-full text-left mt-4 text-primary">
+            <div
+                className={cn(
+                    "text-sm w-full text-left mt-4 overflow-hidden transition-all duration-500 ease-out",
+                    loading && "blur-sm",
+                    showDescription
+                        ? "max-h-96 opacity-100"
+                        : "max-h-0 opacity-0"
+                )}
+            >
                 {explanation ? (
                     <>
-                        <p className="font-medium mb-2">Current Evaluation:</p>
-                        <p className="text-primary">{explanation}</p>
+                        <p className="font-medium mb-2 text-orange-600">Current Evaluation:</p>
+                        <p className="text-orange-600">{explanation}</p>
                     </>
                 ) : (
                     <>

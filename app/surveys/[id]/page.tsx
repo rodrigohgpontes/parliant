@@ -25,6 +25,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { TypingAnimation } from "@/components/ui/typing-animation";
 
 interface Survey {
   id: string;
@@ -149,6 +150,8 @@ export default function SurveyResponsePage() {
   const [deletionCount, setDeletionCount] = useState(0);
   const [isDeletingMessage, setIsDeletingMessage] = useState(false);
   const [infoSubmitted, setInfoSubmitted] = useState(false);
+  const [userStartedTyping, setUserStartedTyping] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Load deletion count from localStorage on mount
   useEffect(() => {
@@ -208,6 +211,13 @@ export default function SurveyResponsePage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Focus textarea on initial load and after processing replies
+  useEffect(() => {
+    if (!initialLoading && !isLoading && !isSubmitted && survey?.is_active && !isMaxQuestionsReached()) {
+      textareaRef.current?.focus();
+    }
+  }, [initialLoading, isLoading, isSubmitted, survey?.is_active, messages.length]);
 
   useEffect(() => {
     const fetchSurvey = async () => {
@@ -798,7 +808,7 @@ export default function SurveyResponsePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
+    <div className="min-h-[calc(100vh-4rem)] bg-gradient-to-b from-white to-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
@@ -827,61 +837,15 @@ export default function SurveyResponsePage() {
               <>
                 <div className="space-y-6">
                   {/* Survey Objective Title */}
-                  <h1 className="text-xl md:text-2xl font-semibold text-center mb-4">
-                    {survey.objective}
+                  <h1 className="text-lg md:text-lg italic mb-4">
+                    Survey Objective: {survey.objective}
                   </h1>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
-                          P
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-white border-2 border-white">
-                          <div className="w-full h-full rounded-full bg-green-500"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
                   {!survey.is_active && (
                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
                       <p className="text-amber-700 text-sm">
                         This survey has been closed by the creator. You can view the conversation, but no new responses can be submitted.
                       </p>
-                    </div>
-                  )}
-
-                  {survey.max_questions && survey.is_active && (
-                    <div className="flex justify-between items-center mb-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">Answers:</span>
-                        <div className="bg-muted rounded-full px-3 py-0.5 text-xs">
-                          <span className={
-                            isMaxQuestionsReached()
-                              ? "text-red-600 font-semibold"
-                              : isApproachingMaxQuestions()
-                                ? "text-amber-600 font-medium"
-                                : "text-blue-600"
-                          }>
-                            {getUserMessageCount()}
-                          </span>
-                          <span> / {survey.max_questions}</span>
-                        </div>
-                      </div>
-                      {(isMaxQuestionsReached() || isApproachingMaxQuestions()) && (
-                        <div className={
-                          isMaxQuestionsReached()
-                            ? "text-red-600 text-xs font-medium"
-                            : "text-amber-700 text-xs"
-                        }
-                        >
-                          {isMaxQuestionsReached()
-                            ? "Maximum questions reached. Please submit your response."
-                            : `Approaching question limit (${getRemainingQuestions()} remaining)`
-                          }
-                        </div>
-                      )}
                     </div>
                   )}
 
@@ -897,10 +861,15 @@ export default function SurveyResponsePage() {
                             : 'bg-muted rounded-bl-none'
                             } relative`}
                         >
-                          <p className="text-sm font-medium mb-1 opacity-70">
-                            {message.role === 'user' ? 'You' : 'Assistant'}
-                          </p>
-                          <p className="whitespace-pre-wrap">{message.content}</p>
+                          {message.role === 'assistant' && index === messages.length - 1 ? (
+                            <TypingAnimation
+                              text={message.content}
+                              speed={20}
+                              className="text-2xl"
+                            />
+                          ) : (
+                            <p className="whitespace-pre-wrap">{message.content}</p>
+                          )}
 
                           {/* Trash icon for user messages */}
                           {message.role === 'user' && deletionCount < 3 && !isSubmitted && survey?.is_active && (
@@ -937,7 +906,12 @@ export default function SurveyResponsePage() {
                         <div className="relative">
                           <Textarea
                             value={input}
-                            onChange={(e) => setInput(e.target.value)}
+                            onChange={(e) => {
+                              setInput(e.target.value);
+                              if (e.target.value.length > 0 && !userStartedTyping) {
+                                setUserStartedTyping(true);
+                              }
+                            }}
                             onKeyDown={handleKeyDown}
                             placeholder={
                               !survey.is_active
@@ -951,6 +925,7 @@ export default function SurveyResponsePage() {
                             maxLength={survey.max_characters}
                             className={`min-h-[100px] resize-none pr-24 ${isOverCharacterLimit() ? 'border-red-500 focus:ring-red-500' : ''}`}
                             disabled={isLoading || isSubmitted || !survey.is_active || !!isMaxQuestionsReached()}
+                            ref={textareaRef}
                           />
                           <div className="absolute bottom-3 right-3 flex items-center gap-2">
                             <Button
@@ -974,7 +949,7 @@ export default function SurveyResponsePage() {
                                   Sending...
                                 </>
                               ) : (
-                                "Send"
+                                "Reply"
                               )}
                             </Button>
                           </div>
@@ -987,7 +962,7 @@ export default function SurveyResponsePage() {
                       );
                     })()}
                     {/* Character limit indicator */}
-                    {survey.max_characters && survey.is_active && (
+                    {input.length > 0 && survey.max_characters && survey.is_active && (
                       <div className="flex justify-end items-center mb-2">
                         <div className={`text-xs ${isOverCharacterLimit()
                           ? "text-red-600 font-semibold"
@@ -1001,9 +976,42 @@ export default function SurveyResponsePage() {
                     )}
                   </form>
 
+                  {survey.max_questions && survey.is_active && messages.length > 2 && (
+                    <div className="flex justify-end items-end mb-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">Answers:</span>
+                        <div className="bg-muted rounded-full px-3 py-0.5 text-xs">
+                          <span className={
+                            isMaxQuestionsReached()
+                              ? "text-red-600 font-semibold"
+                              : isApproachingMaxQuestions()
+                                ? "text-amber-600 font-medium"
+                                : "text-blue-600"
+                          }>
+                            {getUserMessageCount()}
+                          </span>
+                          <span> / {survey.max_questions}</span>
+                        </div>
+                      </div>
+                      {(isMaxQuestionsReached() || isApproachingMaxQuestions()) && (
+                        <div className={
+                          isMaxQuestionsReached()
+                            ? "text-red-600 text-xs font-medium"
+                            : "text-amber-700 text-xs"
+                        }
+                        >
+                          {isMaxQuestionsReached()
+                            ? "Maximum questions reached. Please submit your response."
+                            : `Approaching question limit (${getRemainingQuestions()} remaining)`
+                          }
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-center w-full">
                     <div className="w-[85%] sm:w-3/4">
-                      <Thermometer value={insightLevel} max={10} explanation={insightExplanation || undefined} />
+                      <Thermometer value={insightLevel} max={10} explanation={insightExplanation || undefined} loading={isLoading} userStartedTyping={userStartedTyping} />
                     </div>
                   </div>
 
@@ -1019,7 +1027,7 @@ export default function SurveyResponsePage() {
                   <Button
                     onClick={handleFinalSubmit}
                     disabled={isSubmitting || messages.length < 2 || !currentResponseId || !survey.is_active}
-                    className="text-[14px] sm:text-[15px] font-medium rounded-full"
+                    className="text-[14px] sm:text-[15px] font-medium rounded-full bg-purple-600 hover:bg-purple-700"
                   >
                     {isSubmitting ? "Submitting..." : "Submit Survey"}
                   </Button>

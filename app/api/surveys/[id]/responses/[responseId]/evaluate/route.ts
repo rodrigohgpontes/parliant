@@ -32,24 +32,27 @@ export async function POST(
         // Ask AI to evaluate the conversation
         const completion = await openai.chat.completions.create({
             model: "o3",
-            max_completion_tokens: 100, // Limit token output for concise response
+            max_completion_tokens: 1000, // Limit token output for concise response
             messages: [
                 {
                     role: "system",
                     content: `Evaluate the insightfulness of user answers in this conversation based on:
-1. Depth of responses
-2. Relevance to objective: ${survey.objective}
-3. Quality of insights
-4. Engagement level
-5. Communication clarity
+                        1. Depth of responses
+                        2. Relevance to objective: ${survey.objective}
+                        3. Quality of insights
+                        4. Engagement level
+                        5. Communication clarity
 
-Be strict with the evaluation. Don't be afraid to give a low score if the answers are not good.
+                        Be strict with the evaluation. Don't be afraid to give a low score if the answers are not good.
+                        Give more weight to the latest responses.
+                        If only the first one or two responses are shallow, but the rest are deep, give a high score.
 
-Return only JSON with:
-- insight_level: integer 0-10
-- explanation: brief explanation (max 20 words)
+                        Return only JSON with:
+                        - insight_level: integer 0-10
+                        - explanation: brief explanation (max 1 paragraph)
 
-Example: {"insight_level": 6, "explanation": "Good depth on main topics, but missed opportunities for specific details."}`,
+                        Example: {"insight_level": 6, "explanation": "Good depth on main topics, but missed opportunities for specific details."}
+                    `,
                 },
                 {
                     role: "user",

@@ -19,7 +19,7 @@ export async function analyzeResponse(responseId: number) {
 
     const completion = await openai.chat.completions.create({
         model: "o3",
-        max_completion_tokens: 300,
+        max_completion_tokens: 1000,
         messages: [
             {
                 role: "system",
@@ -75,7 +75,7 @@ export async function getSurveyInsights(surveyId: number) {
 
     const completion = await openai.chat.completions.create({
         model: "o3",
-        max_completion_tokens: 300,
+        max_completion_tokens: 1000,
         messages: [
             {
                 role: "system",

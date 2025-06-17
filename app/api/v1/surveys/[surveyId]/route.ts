@@ -63,6 +63,7 @@ export async function GET(
                     survey_summary: survey.survey_summary,
                     survey_tags: survey.survey_tags,
                     first_question: survey.first_question,
+                    fixed_questions: survey.fixed_questions,
                     created_at: survey.created_at,
                     updated_at: survey.updated_at,
                 }
@@ -124,6 +125,7 @@ export async function PATCH(
         max_characters = CASE WHEN ${body.max_characters !== undefined} THEN ${body.max_characters || null} ELSE max_characters END,
         survey_tags = COALESCE(${body.survey_tags || null}, survey_tags),
         first_question = COALESCE(${body.first_question || null}, first_question),
+        fixed_questions = COALESCE(${body.fixed_questions || null}, fixed_questions),
         survey_summary = COALESCE(${body.survey_summary || null}, survey_summary),
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ${params.surveyId} AND creator_id = ${userId}
@@ -153,6 +155,7 @@ export async function PATCH(
                     survey_summary: survey.survey_summary,
                     survey_tags: survey.survey_tags,
                     first_question: survey.first_question,
+                    fixed_questions: survey.fixed_questions,
                     created_at: survey.created_at,
                     updated_at: survey.updated_at,
                 }

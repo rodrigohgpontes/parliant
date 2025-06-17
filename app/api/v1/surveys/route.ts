@@ -168,6 +168,7 @@ export async function GET(req: NextRequest) {
                 survey_summary: survey.survey_summary,
                 survey_tags: survey.survey_tags,
                 first_question: survey.first_question,
+                fixed_questions: survey.fixed_questions,
                 created_at: survey.created_at,
                 updated_at: survey.updated_at,
             }
@@ -231,7 +232,8 @@ export async function POST(req: NextRequest) {
             max_questions,
             max_characters,
             survey_tags,
-            first_question
+            first_question,
+            fixed_questions
         } = body;
 
         // Validate required fields
@@ -254,7 +256,8 @@ export async function POST(req: NextRequest) {
         max_questions,
         max_characters,
         survey_tags,
-        first_question
+        first_question,
+        fixed_questions
       ) VALUES (
         ${userId},
         ${objective},
@@ -265,7 +268,8 @@ export async function POST(req: NextRequest) {
         ${max_questions || null},
         ${max_characters || null},
         ${survey_tags || null},
-        ${first_question || null}
+        ${first_question || null},
+        ${fixed_questions || null}
       ) RETURNING *
     `;
 
@@ -288,6 +292,7 @@ export async function POST(req: NextRequest) {
                     survey_summary: survey.survey_summary,
                     survey_tags: survey.survey_tags,
                     first_question: survey.first_question,
+                    fixed_questions: survey.fixed_questions,
                     created_at: survey.created_at,
                     updated_at: survey.updated_at,
                 }

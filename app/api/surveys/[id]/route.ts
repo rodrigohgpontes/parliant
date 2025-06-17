@@ -10,7 +10,7 @@ export async function GET(
 
     try {
         const result = await db`
-            SELECT id, objective, orientations, allow_anonymous, first_question, max_questions, max_characters, is_active
+            SELECT id, objective, orientations, allow_anonymous, first_question, fixed_questions, max_questions, max_characters, is_active
             FROM surveys 
             WHERE id = ${id}
         `;

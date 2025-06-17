@@ -5,12 +5,11 @@ import { useParams, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import Link from "next/link";
-import { Send, Shuffle, Mic, RefreshCw, Trash2 } from "lucide-react";
+import { Mic, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -35,6 +34,7 @@ interface Survey {
   orientations?: string;
   allow_anonymous: boolean;
   first_question?: string;
+  fixed_questions?: string[];
   max_questions?: number;
   max_characters?: number;
   is_active: boolean;
@@ -44,16 +44,6 @@ interface Message {
   role: "user" | "assistant" | "system";
   content: string;
 }
-
-const LoadingDots = () => {
-  return (
-    <div className="flex space-x-1">
-      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-      <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
-    </div>
-  );
-};
 
 // function getParlyMood(insightLevel: number, explanation: string | null) {
 //   // Default to neutral state
@@ -144,7 +134,6 @@ export default function SurveyResponsePage() {
   const [currentResponseId, setCurrentResponseId] = useState<string | null>(responseId);
   const [insightLevel, setInsightLevel] = useState(0);
   const [insightExplanation, setInsightExplanation] = useState<string | null>(null);
-  const [isEvaluating, setIsEvaluating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [showAudioRecorder, setShowAudioRecorder] = useState(false);
   const [deletionCount, setDeletionCount] = useState(0);
@@ -193,15 +182,32 @@ export default function SurveyResponsePage() {
     return survey.max_questions - getUserMessageCount();
   };
 
+  // Helper function to get the next fixed question to use
+  const getNextFixedQuestion = () => {
+    if (!survey?.fixed_questions || survey.fixed_questions.length === 0) {
+      return null;
+    }
+
+    // Get all assistant messages that contain fixed questions
+    const assistantMessages = messages.filter(msg => msg.role === 'assistant');
+    const usedFixedQuestions = assistantMessages.filter(msg =>
+      survey.fixed_questions!.some(fixedQ => msg.content.includes(fixedQ))
+    );
+
+    // Find the next fixed question that hasn't been used yet
+    const nextFixedQuestionIndex = usedFixedQuestions.length;
+
+    // If we've used all fixed questions, return null
+    if (nextFixedQuestionIndex >= survey.fixed_questions.length) {
+      return null;
+    }
+
+    return survey.fixed_questions[nextFixedQuestionIndex];
+  };
+
   // Helper function to check if character limit is reached or exceeded
   const isOverCharacterLimit = () => {
     return survey?.max_characters && input.length > survey.max_characters;
-  };
-
-  // Helper function to get remaining characters
-  const getRemainingCharacters = () => {
-    if (!survey?.max_characters) return null;
-    return survey.max_characters - input.length;
   };
 
   const scrollToBottom = () => {
@@ -393,147 +399,67 @@ export default function SurveyResponsePage() {
           // Show the modal for respondent info
           setShowRespondentModal(true);
 
-          // Get AI response
-          const aiRes = await fetch(`/api/surveys/${params.id}/chat`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              messages: newMessages,
-              survey: {
-                objective: survey?.objective,
-                orientations: survey?.orientations,
-              },
-            }),
-          });
+          // Count user messages to check if we're at the max_questions limit
+          const userMessageCount = newMessages.filter(msg => msg.role === "user").length;
 
-          if (aiRes.ok) {
-            const aiData = await aiRes.json();
-            const updatedMessages = [...newMessages, { role: "assistant" as const, content: aiData.content }];
-            setMessages(updatedMessages);
-
-            // Update the response in the database
+          // If we've reached max_questions, auto-submit the survey after adding the user's message
+          if (survey?.max_questions && userMessageCount >= survey.max_questions) {
+            console.log("Max questions reached, auto-submitting survey");
+            // Update the response in the database with the final user message
             await fetch(`/api/surveys/${params.id}/responses/${data.id}`, {
               method: "PATCH",
               headers: {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                conversation: updatedMessages,
+                conversation: newMessages,
               }),
-            }).then(async (updateRes) => {
-              // Check if the response was rejected because it's already completed
-              if (updateRes.status === 403) {
-                const errorData = await updateRes.json();
-                if (errorData.completed) {
-                  setIsSubmitted(true);
-                  return;
-                }
-                if (errorData.max_reached) {
-                  // Auto-submit when max questions is reached
-                  await handleFinalSubmit();
-                  return;
-                }
-                if (errorData.character_limit_exceeded) {
-                  // Handle character limit exceeded error
-                  alert(`Message exceeds character limit of ${errorData.max_characters} characters.`);
-                  // Remove the last message that caused the error
-                  setMessages(messages);
-                  return;
-                }
-              }
-            }).catch(error => {
-              console.error("Error updating response:", error);
             });
 
-            // Evaluate the conversation insight
-            setIsEvaluating(true);
-            const evaluationRes = await fetch(`/api/surveys/${params.id}/responses/${data.id}/evaluate`, {
+            // Submit the survey
+            await handleFinalSubmit();
+            setIsLoading(false);
+            return;
+          }
+
+          // Check if this is an even-numbered user message and we have fixed questions
+          const isEvenUserMessage = userMessageCount % 2 === 0;
+          const nextFixedQuestion = getNextFixedQuestion();
+
+          let aiResponseContent: string;
+
+          if (isEvenUserMessage && nextFixedQuestion) {
+            // Use the fixed question instead of making an AI request
+            aiResponseContent = nextFixedQuestion;
+          } else {
+            // Get AI response
+            const aiRes = await fetch(`/api/surveys/${params.id}/chat`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                conversation: updatedMessages,
+                messages: newMessages,
+                survey: {
+                  objective: survey?.objective,
+                  orientations: survey?.orientations,
+                },
               }),
             });
 
-            if (evaluationRes.ok) {
-              const evaluation = await evaluationRes.json();
-              setInsightLevel(evaluation.insight_level);
-              setInsightExplanation(evaluation.explanation);
-            }
-            setIsEvaluating(false);
-
-            // Check if we've reached max_questions after the first question
-            const userMessageCount = updatedMessages.filter(msg => msg.role === "user").length;
-
-            if (survey?.max_questions && userMessageCount >= survey.max_questions) {
-              console.log("Max questions reached, auto-submitting survey");
-              await handleFinalSubmit();
+            if (aiRes.ok) {
+              const aiData = await aiRes.json();
+              aiResponseContent = aiData.content;
+            } else {
+              throw new Error("Failed to get AI response");
             }
           }
-        } else if (res.status === 403) {
-          // Handle error responses
-          const errorData = await res.json();
-          if (errorData.character_limit_exceeded) {
-            alert(`Message exceeds character limit of ${errorData.max_characters} characters.`);
-            // Revert to previous messages state
-            setMessages(messages);
-            return;
-          }
-        }
-      } else {
-        // Add user message to chat
-        const newMessages = [...messages, { role: "user" as const, content: userMessage }];
-        setMessages(newMessages);
 
-        // Count user messages to check if we're at the max_questions limit
-        const userMessageCount = newMessages.filter(msg => msg.role === "user").length;
-
-        // If we've reached max_questions, auto-submit the survey after adding the user's message
-        if (survey?.max_questions && userMessageCount >= survey.max_questions) {
-          console.log("Max questions reached, auto-submitting survey");
-          // Update the response in the database with the final user message
-          await fetch(`/api/surveys/${params.id}/responses/${currentResponseId}`, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              conversation: newMessages,
-            }),
-          });
-
-          // Submit the survey
-          await handleFinalSubmit();
-          setIsLoading(false);
-          return;
-        }
-
-        // Get AI response
-        const res = await fetch(`/api/surveys/${params.id}/chat`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            messages: newMessages,
-            survey: {
-              objective: survey?.objective,
-              orientations: survey?.orientations,
-            },
-          }),
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const updatedMessages = [...newMessages, { role: "assistant" as const, content: data.content }];
+          const updatedMessages = [...newMessages, { role: "assistant" as const, content: aiResponseContent }];
           setMessages(updatedMessages);
 
           // Update the response in the database
-          await fetch(`/api/surveys/${params.id}/responses/${currentResponseId}`, {
+          await fetch(`/api/surveys/${params.id}/responses/${data.id}`, {
             method: "PATCH",
             headers: {
               "Content-Type": "application/json",
@@ -566,9 +492,8 @@ export default function SurveyResponsePage() {
             console.error("Error updating response:", error);
           });
 
-          // Evaluate the conversation insight after both messages are added
-          setIsEvaluating(true);
-          const evaluationRes = await fetch(`/api/surveys/${params.id}/responses/${currentResponseId}/evaluate`, {
+          // Evaluate the conversation insight
+          const evaluationRes = await fetch(`/api/surveys/${params.id}/responses/${data.id}/evaluate`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -583,14 +508,135 @@ export default function SurveyResponsePage() {
             setInsightLevel(evaluation.insight_level);
             setInsightExplanation(evaluation.explanation);
           }
-          setIsEvaluating(false);
 
-          // Check if we need to auto-submit after this exchange
-          // We count user messages again to check if we've reached the limit
-          if (survey?.max_questions && userMessageCount >= survey.max_questions) {
-            console.log("Max questions reached after AI response, auto-submitting survey");
+          // Check if we've reached max_questions after the first question
+          const finalUserMessageCount = updatedMessages.filter(msg => msg.role === "user").length;
+
+          if (survey?.max_questions && finalUserMessageCount >= survey.max_questions) {
+            console.log("Max questions reached, auto-submitting survey");
             await handleFinalSubmit();
           }
+        }
+      } else {
+        // Add user message to chat
+        const newMessages = [...messages, { role: "user" as const, content: userMessage }];
+        setMessages(newMessages);
+
+        // Count user messages to check if we're at the max_questions limit
+        const userMessageCount = newMessages.filter(msg => msg.role === "user").length;
+
+        // If we've reached max_questions, auto-submit the survey after adding the user's message
+        if (survey?.max_questions && userMessageCount >= survey.max_questions) {
+          console.log("Max questions reached, auto-submitting survey");
+          // Update the response in the database with the final user message
+          await fetch(`/api/surveys/${params.id}/responses/${currentResponseId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              conversation: newMessages,
+            }),
+          });
+
+          // Submit the survey
+          await handleFinalSubmit();
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if this is an even-numbered user message and we have fixed questions
+        const isEvenUserMessage = userMessageCount % 2 === 0;
+        const nextFixedQuestion = getNextFixedQuestion();
+
+        let aiResponseContent: string;
+
+        if (isEvenUserMessage && nextFixedQuestion) {
+          // Use the fixed question instead of making an AI request
+          aiResponseContent = nextFixedQuestion;
+        } else {
+          // Get AI response
+          const res = await fetch(`/api/surveys/${params.id}/chat`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              messages: newMessages,
+              survey: {
+                objective: survey?.objective,
+                orientations: survey?.orientations,
+              },
+            }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            aiResponseContent = data.content;
+          } else {
+            throw new Error("Failed to get AI response");
+          }
+        }
+
+        const updatedMessages = [...newMessages, { role: "assistant" as const, content: aiResponseContent }];
+        setMessages(updatedMessages);
+
+        // Update the response in the database
+        await fetch(`/api/surveys/${params.id}/responses/${currentResponseId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            conversation: updatedMessages,
+          }),
+        }).then(async (updateRes) => {
+          // Check if the response was rejected because it's already completed
+          if (updateRes.status === 403) {
+            const errorData = await updateRes.json();
+            if (errorData.completed) {
+              setIsSubmitted(true);
+              return;
+            }
+            if (errorData.max_reached) {
+              // Auto-submit when max questions is reached
+              await handleFinalSubmit();
+              return;
+            }
+            if (errorData.character_limit_exceeded) {
+              // Handle character limit exceeded error
+              alert(`Message exceeds character limit of ${errorData.max_characters} characters.`);
+              // Remove the last message that caused the error
+              setMessages(messages);
+              return;
+            }
+          }
+        }).catch(error => {
+          console.error("Error updating response:", error);
+        });
+
+        // Evaluate the conversation insight after both messages are added
+        const evaluationRes = await fetch(`/api/surveys/${params.id}/responses/${currentResponseId}/evaluate`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            conversation: updatedMessages,
+          }),
+        });
+
+        if (evaluationRes.ok) {
+          const evaluation = await evaluationRes.json();
+          setInsightLevel(evaluation.insight_level);
+          setInsightExplanation(evaluation.explanation);
+        }
+
+        // Check if we need to auto-submit after this exchange
+        // We count user messages again to check if we've reached the limit
+        if (survey?.max_questions && userMessageCount >= survey.max_questions) {
+          console.log("Max questions reached after AI response, auto-submitting survey");
+          await handleFinalSubmit();
         }
       }
     } catch (error) {
@@ -644,6 +690,15 @@ export default function SurveyResponsePage() {
       }
       setShowRespondentModal(false);
       setInfoSubmitted(true);
+    }
+  };
+
+  const handleSkipRespondent = () => {
+    setShowRespondentModal(false);
+    setInfoSubmitted(true);
+
+    if (currentResponseId && !window.location.href.includes(`responseId=${currentResponseId}`)) {
+      window.location.href = `/surveys/${params.id}?responseId=${currentResponseId}`;
     }
   };
 
@@ -1080,16 +1135,23 @@ export default function SurveyResponsePage() {
             </div>
             <div className="flex justify-end gap-2">
               {survey?.allow_anonymous && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setShowRespondentModal(false);
-                    setInfoSubmitted(true);
-                  }}
-                >
-                  Skip
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={handleSkipRespondent}
+                        disabled={!currentResponseId}
+                      >
+                        Skip
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>{!currentResponseId ? "Please wait a moment before you can skip..." : ""}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               )}
               <Button type="submit">Continue</Button>
             </div>

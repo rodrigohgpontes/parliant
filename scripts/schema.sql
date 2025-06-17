@@ -42,6 +42,7 @@ CREATE TABLE IF NOT EXISTS surveys (
     survey_summary text,
     survey_tags text[],
     first_question text,
+    fixed_questions text[],
     created_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     updated_at timestamp with time zone DEFAULT CURRENT_TIMESTAMP
 );

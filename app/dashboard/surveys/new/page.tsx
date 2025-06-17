@@ -26,6 +26,7 @@ export default function CreateSurveyPage() {
   const [isImprovingGuidelines, setIsImprovingGuidelines] = useState(false);
   const [firstQuestion, setFirstQuestion] = useState("");
   const [isGeneratingQuestion, setIsGeneratingQuestion] = useState(false);
+  const [fixedQuestions, setFixedQuestions] = useState<string[]>([""]);
   const [allowAnonymous, setAllowAnonymous] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
@@ -325,6 +326,71 @@ export default function CreateSurveyPage() {
               </div>
               <p className="text-sm text-muted-foreground">
                 This field is optional. If left empty, the AI will determine the most appropriate first question based on your learning objective and guidelines.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Fixed Questions (Optional)</CardTitle>
+            <CardDescription>
+              Add up to three specific questions that will always be included in the survey. These questions will be asked in addition to the AI-generated questions.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-4">
+              {fixedQuestions.map((question, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor={`fixed-question-${index}`}>
+                      Fixed Question {index + 1}
+                    </Label>
+                    {fixedQuestions.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newQuestions = fixedQuestions.filter((_, i) => i !== index);
+                          setFixedQuestions(newQuestions.length > 0 ? newQuestions : [""]);
+                        }}
+                        className="h-8 px-2"
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </div>
+                  <Textarea
+                    id={`fixed-question-${index}`}
+                    name={`fixed_questions_${index}`}
+                    placeholder={`Enter fixed question ${index + 1}...`}
+                    value={question}
+                    onChange={(e) => {
+                      const newQuestions = [...fixedQuestions];
+                      newQuestions[index] = e.target.value;
+                      setFixedQuestions(newQuestions);
+                    }}
+                    className="min-h-[80px] border-primary/50 bg-primary/5 focus:border-primary focus:ring-primary hover:border-primary"
+                  />
+                </div>
+              ))}
+
+              {fixedQuestions.length < 3 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setFixedQuestions([...fixedQuestions, ""])}
+                  className="w-full"
+                >
+                  Add Another Fixed Question
+                </Button>
+              )}
+
+              <p className="text-sm text-muted-foreground">
+                Fixed questions are optional and will be asked in the order specified. You can add up to three fixed questions.
+                These questions will be included in every survey response, regardless of the AI's conversation flow.
+                Note: If a respondent completes the survey early, they may not be asked all fixed questions.
               </p>
             </div>
           </CardContent>

@@ -137,13 +137,22 @@ export async function createAuthenticatedSurvey(data: FormData) {
     const firstQuestion = data.get("first_question") as string;
     const allowAnonymous = data.get("allow_anonymous") === "on";
 
+    // Extract fixed questions from form data
+    const fixedQuestions: string[] = [];
+    for (let i = 0; i < 3; i++) {
+        const question = data.get(`fixed_questions_${i}`) as string;
+        if (question && question.trim()) {
+            fixedQuestions.push(question.trim());
+        }
+    }
+
     if (!title) {
         return { success: false, error: "Title is required" };
     }
 
     await db`
-    INSERT INTO surveys (creator_id, objective, orientations, first_question, allow_anonymous)
-    VALUES (${userId}, ${title}, ${description}, ${firstQuestion}, ${allowAnonymous})
+    INSERT INTO surveys (creator_id, objective, orientations, first_question, fixed_questions, allow_anonymous)
+    VALUES (${userId}, ${title}, ${description}, ${firstQuestion}, ${fixedQuestions}, ${allowAnonymous})
   `;
     await revalidateDashboard();
     return { success: true };

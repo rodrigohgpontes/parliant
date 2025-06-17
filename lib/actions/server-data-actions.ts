@@ -9,6 +9,7 @@ interface Survey {
     objective: string;
     orientations?: string;
     first_question?: string;
+    fixed_questions?: string[];
     created_at: Date;
     updated_at: Date;
     deleted_at?: Date;
@@ -134,6 +135,7 @@ export async function getSurveysServer(): Promise<Survey[]> {
         objective: survey.objective,
         orientations: survey.orientations,
         first_question: survey.first_question,
+        fixed_questions: survey.fixed_questions,
         created_at: new Date(survey.created_at),
         updated_at: new Date(survey.updated_at),
         deleted_at: survey.deleted_at ? new Date(survey.deleted_at) : undefined,
@@ -185,6 +187,7 @@ export async function getSurveyServer(id: string): Promise<Survey | null> {
         objective: survey.objective,
         orientations: survey.orientations,
         first_question: survey.first_question,
+        fixed_questions: survey.fixed_questions,
         created_at: new Date(survey.created_at),
         updated_at: new Date(survey.updated_at),
         deleted_at: survey.deleted_at ? new Date(survey.deleted_at) : undefined,
@@ -827,6 +830,44 @@ export async function updateSurveyFirstQuestion(surveyId: string, firstQuestion:
     await db`
         UPDATE surveys 
         SET first_question = ${firstQuestion}
+        WHERE id = ${surveyId}
+    `;
+}
+
+export async function updateSurveyFixedQuestions(surveyId: string, fixedQuestions: string[]) {
+    const session = await getSession();
+    const user = session?.user;
+
+    if (!user) {
+        throw new Error("Not authenticated");
+    }
+
+    // First get the user's UUID from the users table
+    const userResult = await db`
+        SELECT id FROM users 
+        WHERE auth0_id = ${user.sub}
+    ` as QueryResult<User>;
+
+    if (!userResult?.length) {
+        throw new Error(`User not found in database for auth0_id: ${user.sub}`);
+    }
+
+    const userId = userResult[0].id;
+
+    // Verify that the survey belongs to the user
+    const surveyResult = await db`
+        SELECT * FROM surveys 
+        WHERE id = ${surveyId} AND creator_id = ${userId}
+    ` as QueryResult<Survey>;
+
+    if (!surveyResult.length) {
+        throw new Error("Survey not found or not authorized");
+    }
+
+    // Update the fixed questions
+    await db`
+        UPDATE surveys 
+        SET fixed_questions = ${fixedQuestions}
         WHERE id = ${surveyId}
     `;
 } 

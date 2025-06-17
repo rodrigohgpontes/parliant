@@ -67,6 +67,7 @@ export async function POST(
                     survey_summary: survey.survey_summary,
                     survey_tags: survey.survey_tags,
                     first_question: survey.first_question,
+                    fixed_questions: survey.fixed_questions,
                     created_at: survey.created_at,
                     updated_at: survey.updated_at,
                 }

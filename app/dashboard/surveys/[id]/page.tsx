@@ -5,7 +5,7 @@ import { ExportPDFButton } from "@/components/export-pdf-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { getSurveyServer } from "@/lib/actions/server-data-actions";
-import { getResponsesServer, updateResponseSummary, updateSurveySummary, toggleSurveyStatus, updateSurveyGuidelines, markResponseAsCompleted, toggleResponseValidStatus, updateSurveyFirstQuestion } from "@/lib/actions/server-data-actions";
+import { getResponsesServer, updateResponseSummary, updateSurveySummary, toggleSurveyStatus, updateSurveyGuidelines, markResponseAsCompleted, toggleResponseValidStatus, updateSurveyFirstQuestion, updateSurveyFixedQuestions } from "@/lib/actions/server-data-actions";
 import { ArrowLeft, BarChart, Users, Clock, Activity, Sparkles, Copy, Pencil, X, Check, AlertTriangle, Ban } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -29,6 +29,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Textarea } from "@/components/ui/textarea";
 import { EditableGuidelines } from "@/components/editable-guidelines";
 import { EditableFirstQuestion } from "@/components/editable-first-question";
+import { EditableFixedQuestions } from "@/components/editable-fixed-questions";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ResponseToggleSwitch } from "@/components/response-toggle-switch";
@@ -69,37 +70,55 @@ export default async function SurveyDetailsPage({ params }: PageProps) {
       <Card>
         <CardHeader>
           <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="guidelines" className="border-none">
-              <AccordionTrigger className="text-lg font-semibold hover:no-underline">Assistant Guidelines</AccordionTrigger>
+            <AccordionItem value="settings" className="border-none">
+              <AccordionTrigger className="text-lg font-semibold hover:no-underline">
+                Survey Settings
+              </AccordionTrigger>
               <AccordionContent>
-                <EditableGuidelines
-                  guidelines={survey.orientations || null}
-                  onSave={async (guidelines) => {
-                    "use server";
-                    await updateSurveyGuidelines(survey.id, guidelines);
-                    revalidatePath(`/dashboard/surveys/${survey.id}`);
-                  }}
-                />
+                <div className="flex flex-col gap-12 my-8">
+                  <div>
+                    <h3 className="text-md font-medium mb-3">Assistant Guidelines</h3>
+                    <EditableGuidelines
+                      guidelines={survey.orientations || null}
+                      onSave={async (guidelines) => {
+                        "use server";
+                        await updateSurveyGuidelines(survey.id, guidelines);
+                        revalidatePath(`/dashboard/surveys/${survey.id}`);
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <h3 className="text-md font-medium mb-3">First Question</h3>
+                    <EditableFirstQuestion
+                      question={survey.first_question || null}
+                      onSave={async (firstQuestion) => {
+                        "use server";
+                        await updateSurveyFirstQuestion(survey.id, firstQuestion);
+                        revalidatePath(`/dashboard/surveys/${survey.id}`);
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <h3 className="text-md font-medium mb-3">Fixed Questions</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      These questions will always be included in the survey, regardless of the AI's conversation flow.
+                    </p>
+                    <EditableFixedQuestions
+                      questions={survey.fixed_questions || null}
+                      onSave={async (fixedQuestions) => {
+                        "use server";
+                        await updateSurveyFixedQuestions(survey.id, fixedQuestions);
+                        revalidatePath(`/dashboard/surveys/${survey.id}`);
+                      }}
+                    />
+                  </div>
+                </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
         </CardHeader>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-md">First Question</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <EditableFirstQuestion
-            question={survey.first_question || null}
-            onSave={async (firstQuestion) => {
-              "use server";
-              await updateSurveyFirstQuestion(survey.id, firstQuestion);
-              revalidatePath(`/dashboard/surveys/${survey.id}`);
-            }}
-          />
-        </CardContent>
       </Card>
 
       <Card className="bg-blue-50 border-blue-100">

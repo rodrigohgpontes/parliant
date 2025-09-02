@@ -35,30 +35,49 @@ export default function VerifyEmailPage() {
                 if (isRedirecting) return; // Prevent multiple redirects
 
                 console.log('Polling: Checking email verification status...');
-                // Force a session refresh
-                const response = await fetch('/api/auth/refresh', { method: 'POST' });
-                if (!response.ok) {
-                    throw new Error('Failed to refresh session');
+
+                // First try to refresh the session data
+                const refreshResponse = await fetch('/api/auth/refresh', { method: 'POST' });
+                if (refreshResponse.ok) {
+                    const refreshData = await refreshResponse.json();
+                    if (refreshData.email_verified) {
+                        console.log('Polling: Email verified via refresh, redirecting to dashboard');
+                        setIsRedirecting(true);
+                        clearInterval(intervalId);
+                        // Use replace to avoid adding to browser history
+                        router.replace('/dashboard');
+                        return;
+                    }
                 }
+
+                // Fallback: check the profile endpoint
                 const profileResponse = await fetch('/api/auth/profile');
-                if (!profileResponse.ok) {
-                    throw new Error('Failed to fetch user profile');
-                }
-                const updatedUser = await profileResponse.json();
-                if (updatedUser?.email_verified) {
-                    console.log('Polling: Email verified, redirecting to dashboard');
-                    setIsRedirecting(true);
-                    clearInterval(intervalId);
-                    router.push('/dashboard', { scroll: false });
-                    // Force a hard navigation if the router.push doesn't work
-                    setTimeout(() => {
-                        window.location.href = '/dashboard';
-                    }, 1000);
+                if (profileResponse.ok) {
+                    const updatedUser = await profileResponse.json();
+                    if (updatedUser?.email_verified) {
+                        console.log('Polling: Email verified via profile, redirecting to dashboard');
+                        setIsRedirecting(true);
+                        clearInterval(intervalId);
+                        router.replace('/dashboard');
+                    }
                 }
             } catch (error) {
                 console.error('Error checking session:', error);
             }
         };
+
+        // Check if user might have just verified email (from URL params)
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasVerificationParams = urlParams.has('success') || urlParams.has('verified') ||
+            urlParams.has('email_verified') || urlParams.has('code');
+
+        if (hasVerificationParams) {
+            console.log('Verification parameters detected, checking status immediately...');
+            // Immediate check if verification params are present
+            setTimeout(() => {
+                checkEmailVerification();
+            }, 500);
+        }
 
         // Check immediately and then every 5 seconds
         checkEmailVerification();

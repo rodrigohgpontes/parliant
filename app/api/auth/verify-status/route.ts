@@ -3,7 +3,7 @@ import { getSession } from '@/lib/auth0';
 import { createOrUpdateUser } from '@/lib/actions/user-actions';
 import type { NextRequest } from 'next/server';
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
     try {
         const session = await getSession();
         if (!session?.user) {
@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
 
         if (!response.ok) {
             console.error('Error fetching user profile from Auth0:', await response.text());
-            return NextResponse.json({ error: 'Failed to refresh user data' }, { status: 500 });
+            return NextResponse.json({ error: 'Failed to fetch user data' }, { status: 500 });
         }
 
         const updatedUserData = await response.json();
@@ -29,11 +29,11 @@ export async function POST(request: NextRequest) {
         await createOrUpdateUser(updatedUserData);
 
         return NextResponse.json({
-            success: true,
-            email_verified: updatedUserData.email_verified
+            email_verified: updatedUserData.email_verified,
+            email: updatedUserData.email
         });
     } catch (error) {
-        console.error('Error refreshing session:', error);
-        return NextResponse.json({ error: 'Failed to refresh session' }, { status: 500 });
+        console.error('Error checking verification status:', error);
+        return NextResponse.json({ error: 'Failed to check verification status' }, { status: 500 });
     }
-} 
+}

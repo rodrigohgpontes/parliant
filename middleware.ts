@@ -35,27 +35,31 @@ export async function middleware(request: NextRequest) {
     // Create or update user in our database
     await createOrUpdateUser(user);
 
-    // Get latest user data from Auth0 Management API
+    // For email verification, trust the session data first, but also check our database
     let isEmailVerified = user.email_verified;
-    try {
-      const response = await fetch(`https://${process.env.AUTH0_DOMAIN}/api/v2/users/${user.sub}`, {
-        headers: {
-          'Authorization': `Bearer ${process.env.AUTH0_MANAGEMENT_API_TOKEN}`,
-          'Content-Type': 'application/json',
-        },
-      });
 
-      if (response.ok) {
-        const userProfile = await response.json();
-        isEmailVerified = userProfile.email_verified;
+    // If not verified in session, check our database for the latest state
+    if (!isEmailVerified) {
+      try {
+        const dbUser = await db`
+          SELECT is_email_verified FROM users WHERE auth0_id = ${user.sub}
+        `;
+        if (dbUser.length > 0) {
+          isEmailVerified = dbUser[0].is_email_verified;
+        }
+      } catch (error) {
+        console.error('Error checking database user verification:', error);
       }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
     }
 
-    // Check if email is verified
+    // Only redirect to verify-email if user is definitely not verified
     if (!isEmailVerified && pathname !== "/verify-email") {
       return NextResponse.redirect(new URL("/verify-email", request.url));
+    }
+
+    // If user is verified but on verify-email page, redirect to dashboard
+    if (isEmailVerified && pathname === "/verify-email") {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
 

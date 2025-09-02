@@ -39,7 +39,15 @@ export async function POST(request: NextRequest) {
         switch (event.type) {
             case 'checkout.session.completed': {
                 const session = event.data.object as Stripe.Checkout.Session;
-                const userId = session.metadata?.userId;
+                const userId = session.metadata?.user_id; // Fixed: use 'user_id' instead of 'userId'
+                const planName = 'pro'; // Always use 'pro' since there's only one Stripe product: "Parliant Pro"
+
+                console.log('Processing checkout.session.completed:', {
+                    sessionId: session.id,
+                    userId,
+                    planName,
+                    metadata: session.metadata
+                });
 
                 // For test events, we'll use a test user ID
                 if (!userId && process.env.NODE_ENV === 'development') {
@@ -57,25 +65,29 @@ export async function POST(request: NextRequest) {
                     // Update subscription in database with test user
                     await db`
                         INSERT INTO subscriptions (user_id, plan, status, stripe_subscription_id)
-                        VALUES (${testUser[0].id}, 'pro', 'active', ${session.subscription})
+                        VALUES (${testUser[0].id}, ${planName}, 'active', ${session.subscription})
                         ON CONFLICT (user_id) 
                         DO UPDATE SET 
-                            plan = 'pro',
+                            plan = ${planName},
                             status = 'active',
                             stripe_subscription_id = ${session.subscription},
                             updated_at = CURRENT_TIMESTAMP
                     `;
                 } else if (!userId) {
-                    console.error('No userId in session metadata and not in development mode');
-                    return NextResponse.json({ error: 'No userId in session metadata' }, { status: 400 });
+                    console.error('No user_id in session metadata and not in development mode', {
+                        metadata: session.metadata,
+                        sessionId: session.id
+                    });
+                    return NextResponse.json({ error: 'No user_id in session metadata' }, { status: 400 });
                 } else {
                     // Update subscription in database with real user
+                    console.log('Updating subscription for user:', userId, 'with plan:', planName);
                     await db`
                         INSERT INTO subscriptions (user_id, plan, status, stripe_subscription_id)
-                        VALUES (${userId}, 'pro', 'active', ${session.subscription})
+                        VALUES (${userId}, ${planName}, 'active', ${session.subscription})
                         ON CONFLICT (user_id) 
                         DO UPDATE SET 
-                            plan = 'pro',
+                            plan = ${planName},
                             status = 'active',
                             stripe_subscription_id = ${session.subscription},
                             updated_at = CURRENT_TIMESTAMP
